@@ -1,0 +1,23 @@
+syntax: glob
+*.pyc
+*.pyo
+*.db
+.DS_Store
+.coverage
+dev.db
+syntax: regexp
+sqlite.db
+/media/*
+.idea
+.idea/
+.idea/*
+.orig
+env/*
+public/
+logs/
+^static/
+^media
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
