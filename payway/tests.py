@@ -56,7 +56,6 @@ class TestClient(unittest.TestCase):
         token = self.client.create_token(card)
 
         self.assertIsNotNone(token)
-        self.assertIsInstance(token, str)
 
     def test_create_customer(self):
         card = self.card
@@ -66,7 +65,6 @@ class TestClient(unittest.TestCase):
         payway_customer_number = self.client.create_customer(customer)
 
         self.assertIsNotNone(payway_customer_number)
-        self.assertIsInstance(payway_customer_number, str)
 
     def test_process_payment(self):
         card = self.card
