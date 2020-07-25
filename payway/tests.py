@@ -201,3 +201,6 @@ class TestClient(unittest.TestCase):
         # create a transaction using valid card
         # then poll transaction using transaction's ID
         pass
+
+    def test_refund(self):
+        pass

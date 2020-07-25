@@ -48,6 +48,16 @@ class Client(object):
                          'invalid')
             raise PaywayError(message='Invalid credentials', code='INVALID_API_CREDENTIALS')
 
+    def post_request(self, endpoint, data, auth=None):
+        if not auth:
+            auth = (self.secret_api_key, '')
+        headers = {'content-type': 'application/x-www-form-urlencoded'}
+        return requests.post(url=endpoint, auth=auth, data=data, headers=headers)
+
+    def put_request(self, endpoint, data):
+        headers = {'content-type': 'application/x-www-form-urlencoded'}
+        return requests.put(url=endpoint, auth=(self.secret_api_key, ''), data=data, headers=headers)
+
     def create_token(self, payway_obj, payment_method):
         """
         Creates a single use token for a Customer's payment setup (credit card or bank account)
@@ -69,7 +79,7 @@ class Client(object):
         })
         endpoint = TOKEN_NO_REDIRECT
         logger.info('Sending Create Token request to PayWay.')
-        response = requests.post(url=endpoint, auth=(self.publishable_api_key, ''), data=data)
+        response = self.post_request(endpoint, data, auth=(self.publishable_api_key, ''))
         logger.info('Response from server: %s' % response)
         errors = self._validate_response(response)
         if errors:
@@ -93,10 +103,10 @@ class Client(object):
 
         if customer.custom_id:
             endpoint = '{}/{}'.format(CUSTOMER_URL, customer.custom_id)
-            response = requests.put(url=endpoint, auth=(self.secret_api_key, ''), data=data)
+            response = self.put_request(endpoint, data)
         else:
             endpoint = '{}/{}'.format(CUSTOMER_URL, customer.id) % (CUSTOMER_URL, str(customer.bc_entity_id))
-            response = requests.post(url=endpoint, auth=(self.secret_api_key, ''), data=data)
+            response = self.post_request(endpoint, data)
 
         logger.info('Response from server: %s' % response)
         errors = self._validate_response(response)
@@ -114,9 +124,8 @@ class Client(object):
         """
         data = payment.to_dict()
         endpoint = TRANSACTION_URL
-        headers = {'content-type': 'application/x-www-form-urlencoded'}
         logger.info('Sending Process Payment request to PayWay.')
-        response = requests.post(url=endpoint, auth=(self.secret_api_key, ''), data=data, headers=headers)
+        response = self.post_request(endpoint, data)
         logger.info('Response from server: %s' % response)
         errors = self._validate_response(response)
         if errors:
