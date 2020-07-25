@@ -62,11 +62,13 @@ class Client(object):
         logger.info('Sending Create Token request to PayWay.')
         response = requests.post(url=endpoint, auth=(self.publishable_api_key, ''), data=data)
         logger.info('Response from server: %s' % response)
-        # todo: add some error checking here
-        self._validate_response(response)
-        new_token_id = response.json().get("singleUseTokenId")
-        # todo: could return full response which has credit card (masked) too along with token id
-        return new_token_id
+        errors = self._validate_response(response)
+        if errors:
+            return None, errors
+        else:
+            new_token_id = response.json().get("singleUseTokenId")
+            # todo: could return full response which has credit card (masked) too along with token id
+            return new_token_id, errors
 
     def create_customer(self, customer):
         # use kwargs?
@@ -88,11 +90,13 @@ class Client(object):
             response = requests.post(url=endpoint, auth=(self.secret_api_key, ''), data=data)
 
         logger.info('Response from server: %s' % response)
-        self._validate_response(response)
-        # if response.status_code == 200 or response.status_code == 201:
-        customer_number = response.json()['customerNumber']
-        # todo: could return a Customer object with the updated payway customer number in it
-        return customer_number
+        errors = self._validate_response(response)
+        if errors:
+            return None, errors
+        else:
+            customer_number = response.json()['customerNumber']
+            # todo: could return a Customer object with the updated payway customer number in it
+            return customer_number, errors
 
     def process_payment(self, payment):
         """
@@ -105,10 +109,13 @@ class Client(object):
         logger.info('Sending Process Payment request to PayWay.')
         response = requests.post(url=endpoint, auth=(self.secret_api_key, ''), data=data, headers=headers)
         logger.info('Response from server: %s' % response)
-        self._validate_response(response)
-        # convert response to Transaction object
-        transaction = Transaction.from_json(response.json())
-        return transaction
+        errors = self._validate_response(response)
+        if errors:
+            return None, errors
+        else:
+            # convert response to Transaction object
+            transaction = Transaction.from_json(response.json())
+        return transaction, errors
 
     def _validate_response(self, response):
 
@@ -120,8 +127,8 @@ class Client(object):
             # parse error message
             errors = response.json()
             payway_errors = PaymentError().from_dict(errors)
-            message = PaymentError().list_to_message(payway_errors)
-            raise PaywayError(code=response.status_code, message=message)
+            # instead of raising an exception, return the specific PayWay errors as a list
+            return payway_errors
 
         elif response.status_code == 500:  # Documented PayWay server errors in JSON
             errors = response.json()
