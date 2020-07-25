@@ -2,7 +2,8 @@ from logging import getLogger
 import requests
 
 from payway.conf import TOKEN_NO_REDIRECT, CUSTOMER_URL, TRANSACTION_URL
-from payway.constants import CREDIT_CARD_PAYMENT_CHOICE
+from payway.constants import CREDIT_CARD_PAYMENT_CHOICE, BANK_ACCOUNT_PAYMENT_CHOICE, PAYMENT_METHOD_CHOICES, \
+    VALID_PAYMENT_METHOD_CHOICES
 from payway.exception import PaywayError
 from payway.model import Customer, Transaction, PaymentError, ServerError
 
@@ -47,16 +48,24 @@ class Client(object):
                          'invalid')
             raise PaywayError(message='Invalid credentials', code='INVALID_API_CREDENTIALS')
 
-    def create_token(self, card):
+    def create_token(self, payway_obj, payment_method):
         """
         Creates a single use token for a Customer's payment setup (credit card or bank account)
         by POSTing to PayWay and reading the token from the redirect response URL.
         Takes a valid form.
         N.B. Creating a token doesn't mean the payment setup details are correct.
         """
-        data = card.to_dict()
+        data = payway_obj.to_dict()
+        if payment_method == 'card':
+            payway_payment_method = CREDIT_CARD_PAYMENT_CHOICE
+        elif payment_method == 'direct_debit':
+            payway_payment_method = BANK_ACCOUNT_PAYMENT_CHOICE
+        elif payment_method not in VALID_PAYMENT_METHOD_CHOICES:
+            raise PaywayError(
+                message="Invalid payment method. Must be one of %s" % ', '.join(VALID_PAYMENT_METHOD_CHOICES),
+                code='INVALID_PAYMENT_METHOD')
         data.update({
-            'paymentMethod': CREDIT_CARD_PAYMENT_CHOICE,
+            'paymentMethod': payway_payment_method,
         })
         endpoint = TOKEN_NO_REDIRECT
         logger.info('Sending Create Token request to PayWay.')

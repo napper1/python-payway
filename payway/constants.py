@@ -131,5 +131,5 @@ DIRECT_DEBIT_CHOICES = (
     ("westpacBranch", "Westpac Branch"),
     ("remittanceProcessingService", "Remittance Processing Service"),
 )
-
 PAYMENT_METHOD_CHOICES = OTHER_PAYMENT_CHOICES + DIRECT_DEBIT_CHOICES
+VALID_PAYMENT_METHOD_CHOICES = ['card', 'direct_debit']

@@ -12,7 +12,7 @@ except:
 
 from payway.client import Client
 from payway.conf import PUBLISHABLE_API_KEY, SECRET_API_KEY
-from payway.model import Card, Customer, Payment, Transaction, PaymentError
+from payway.model import Card, Customer, Payment, Transaction, PaymentError, BankAccount
 
 
 class TestClient(unittest.TestCase):
@@ -79,16 +79,21 @@ class TestClient(unittest.TestCase):
             order_number='5100',
             ip_address='127.0.0.1',
         )
+        cls.bank_account = BankAccount(
+            account_name='Test',
+            bsb='000-000',
+            account_number=123456,
+        )
 
     def test_create_token(self):
         card = self.card
-        token, errors = self.client.create_token(card)
+        token, errors = self.client.create_token(card, 'card')
 
         self.assertIsNotNone(token)
 
     def test_create_customer(self):
         card = self.card
-        token, errors = self.client.create_token(card)
+        token, errors = self.client.create_token(card, 'card')
         customer = self.customer
         customer.token = token
         payway_customer_number, customer_errors = self.client.create_customer(customer)
@@ -97,7 +102,7 @@ class TestClient(unittest.TestCase):
 
     def test_process_payment(self):
         card = self.card
-        token, errors = self.client.create_token(card)
+        token, errors = self.client.create_token(card, 'card')
         customer = self.customer
         customer.token = token
         payway_customer_number, customer_errors = self.client.create_customer(customer)
@@ -115,7 +120,7 @@ class TestClient(unittest.TestCase):
 
     def test_expiry_date(self):
         card = self.expired_card
-        token, errors = self.client.create_token(card)
+        token, errors = self.client.create_token(card, 'card')
 
         self.assertIsNone(token)
         self.assertIsNotNone(errors)
@@ -127,7 +132,7 @@ class TestClient(unittest.TestCase):
     def test_expired_card(self):
         card = copy.deepcopy(self.expired_card)
         card.expiry_date_year = '30'
-        token, errors = self.client.create_token(card)
+        token, errors = self.client.create_token(card, 'card')
         self.assertIsNotNone(token)
         customer = self.customer
         customer.token = token
@@ -145,7 +150,7 @@ class TestClient(unittest.TestCase):
 
     def test_stolen_card(self):
         card = self.stolen_card
-        token, errors = self.client.create_token(card)
+        token, errors = self.client.create_token(card, 'card')
         self.customer.token = token
         payway_customer_number, customer_errors = self.client.create_customer(self.customer)
         payment = self.payment
@@ -161,16 +166,38 @@ class TestClient(unittest.TestCase):
 
     def test_declined_card(self):
         card = self.declined_card
-        token, errors = self.client.create_token(card)
+        token, errors = self.client.create_token(card, 'card')
         self.customer.token = token
         payway_customer_number, customer_errors = self.client.create_customer(self.customer)
         payment = self.payment
         payment.customer_number = payway_customer_number
         payment.order_number = '5103'
-
         transaction, errors = self.client.process_payment(payment)
+
         self.assertIsNone(errors)
         self.assertIsInstance(transaction, Transaction)
         self.assertEqual(transaction.status, 'declined')
         self.assertEqual(transaction.response_code, '42')
         self.assertEqual(transaction.response_text, 'No universal account')
+
+    def test_direct_debit_payment(self):
+        bank_account = self.bank_account
+        token, errors = self.client.create_token(bank_account, 'direct_debit')
+        self.assertIsNotNone(token)
+        self.customer.token = token
+        payway_customer_number, customer_errors = self.client.create_customer(self.customer)
+        payment = self.payment
+        payment.customer_number = payway_customer_number
+        payment.order_number = '5104'
+        transaction, errors = self.client.process_payment(payment)
+
+        self.assertIsNone(errors)
+        self.assertIsInstance(transaction, Transaction)
+        self.assertEqual(transaction.status, 'approved*')
+        self.assertEqual(transaction.response_code, 'G')
+        # PayWay direct debit payments need to be polled in the future to determine transaction outcome
+
+    def test_poll_transaction(self):
+        # create a transaction using valid card
+        # then poll transaction using transaction's ID
+        pass

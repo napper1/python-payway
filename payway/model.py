@@ -1,5 +1,20 @@
 
 
+class BankAccount(object):
+
+    def __init__(self, account_name, bsb, account_number):
+        self.account_name = account_name
+        self.bsb = bsb
+        self.account_number = account_number
+
+    def to_dict(self):
+        return {
+            'accountName': self.account_name,
+            'bsb': self.bsb,
+            'accountNumber': self.account_number
+        }
+
+
 class Card(object):
 
     def __init__(self, card_number=None, cvn=None, card_holder_name=None, expiry_date_month=None,
