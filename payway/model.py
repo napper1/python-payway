@@ -49,7 +49,7 @@ class Customer(object):
 
     def __init__(self, custom_id=None, customer_name=None, email_address=None, send_email_receipts=None,
                  phone_number=None, street=None, street2=None, city_name=None, state=None, postal_code=None,
-                 token=None, customer_number=None):
+                 token=None, customer_number=None, payment_setup=None):
         self.custom_id = custom_id
         self.customer_name = customer_name
         self.email_address = email_address
@@ -62,6 +62,7 @@ class Customer(object):
         self.postal_code = postal_code
         self.token = token
         self.customer_number = customer_number
+        self.payment_setup = payment_setup
 
     def to_dict(self):
         return {
@@ -94,7 +95,12 @@ class Customer(object):
         customer.state = address.get("state")
         customer.postal_code = address.get("postalCode")
         customer.customer_number = response.get("customerNumber")
-        # TODO: parse paymentSetup, custom fields and other fields
+
+        if response.get("paymentSetup") is not None:
+            customer.payment_setup = PaymentSetup().from_dict(response.get("paymentSetup"))
+
+        # TODO: parse custom fields
+
         return customer
 
 
