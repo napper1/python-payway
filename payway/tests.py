@@ -84,6 +84,11 @@ class TestClient(unittest.TestCase):
             bsb='000-000',
             account_number=123456,
         )
+        cls.invalid_bank_account = BankAccount(
+            account_name='Test',
+            bsb='000-001',
+            account_number=123456,
+        )
 
     def test_create_token(self):
         card = self.card
@@ -197,10 +202,111 @@ class TestClient(unittest.TestCase):
         self.assertEqual(transaction.response_code, 'G')
         # PayWay direct debit payments need to be polled in the future to determine transaction outcome
 
-    def test_poll_transaction(self):
+    def test_invalid_direct_debit(self):
+        bank_account = self.invalid_bank_account
+        token, errors = self.client.create_token(bank_account, 'direct_debit')
+        self.assertIsNotNone(errors)
+        payway_error = errors[0]
+        self.assertEqual(payway_error.message, 'Invalid BSB.')
+
+    def test_get_transaction_card(self):
         # create a transaction using valid card
-        # then poll transaction using transaction's ID
-        pass
+        # then poll PayWay for transaction details
+        card = self.card
+        token, errors = self.client.create_token(card, 'card')
+        self.customer.token = token
+        payway_customer_number, customer_errors = self.client.create_customer(self.customer)
+        payment = self.payment
+        payment.customer_number = payway_customer_number
+        payment.order_number = '5105'
+        transaction, errors = self.client.process_payment(payment)
+        self.assertIsNotNone(transaction)
+        self.assertIsNotNone(transaction.transaction_id)
+        polled_transaction, poll_errors = self.client.get_transaction(transaction.transaction_id)
+        self.assertIsNotNone(polled_transaction)
+        self.assertIsNotNone(polled_transaction.transaction_id)
+        self.assertEqual(polled_transaction.transaction_id, transaction.transaction_id)
+
+    def test_get_transaction_direct_debit(self):
+        # create a transaction using direct debit
+        # then poll PayWay for updated transaction
+        bank_account = self.bank_account
+        token, errors = self.client.create_token(bank_account, 'direct_debit')
+        self.customer.token = token
+        payway_customer_number, customer_errors = self.client.create_customer(self.customer)
+        payment = self.payment
+        payment.customer_number = payway_customer_number
+        payment.order_number = '5106'
+        transaction, errors = self.client.process_payment(payment)
+        self.assertIsNotNone(transaction)
+        self.assertIsNotNone(transaction.transaction_id)
+        polled_transaction, poll_errors = self.client.get_transaction(transaction.transaction_id)
+        self.assertIsNotNone(polled_transaction)
+        self.assertIsNotNone(polled_transaction.transaction_id)
+        self.assertEqual(polled_transaction.transaction_id, transaction.transaction_id)
+
+    def test_void(self):
+        # void a transaction in PayWay
+        card = self.card
+        token, errors = self.client.create_token(card, 'card')
+        self.customer.token = token
+        payway_customer_number, customer_errors = self.client.create_customer(self.customer)
+        payment = self.payment
+        payment.customer_number = payway_customer_number
+        payment.order_number = '5105'
+        transaction, errors = self.client.process_payment(payment)
+        self.assertIsNotNone(transaction)
+        self.assertIsNotNone(transaction.transaction_id)
+        void_transaction, void_errors = self.client.void_transaction(transaction.transaction_id)
+        self.assertIsNone(errors)
+        self.assertIsNotNone(void_transaction)
+        self.assertEqual(void_transaction.status, 'voided')
 
     def test_refund(self):
-        pass
+        # create a transaction then refund in PayWay
+        card = self.card
+        token, errors = self.client.create_token(card, 'card')
+        self.customer.token = token
+        payway_customer_number, customer_errors = self.client.create_customer(self.customer)
+        payment = self.payment
+        payment.customer_number = payway_customer_number
+        payment.order_number = '5106'
+        transaction, errors = self.client.process_payment(payment)
+        self.assertIsNotNone(transaction)
+        self.assertIsNotNone(transaction.transaction_id)
+
+        refund, refund_errors = self.client.refund_transaction(
+            transaction_id=transaction.transaction_id,
+            amount=transaction.principal_amount,
+        )
+        # Payment is only refundable after it settles and so this test should produce an error from PayWay
+        self.assertIsNotNone(refund_errors)
+        payway_error = refund_errors[0]
+        self.assertEqual(
+            payway_error.message,
+            'Credit card payments are only refundable after they have settled. You must void this payment instead.'
+        )
+
+    def test_get_customer(self):
+        # get all customer details from PayWay
+        card = self.card
+        token, errors = self.client.create_token(card, 'card')
+        self.customer.token = token
+        payway_customer_number, customer_errors = self.client.create_customer(self.customer)
+
+        customer, customer_errors = self.client.get_customer(payway_customer_number)
+        self.assertIsNotNone(customer)
+        self.assertIsNone(customer_errors)
+        self.assertEqual(customer.customer_number, payway_customer_number)
+
+    def test_update_payment_setup_card(self):
+        # update card or bank account in PayWay from token
+        card = self.card
+        token, errors = self.client.create_token(card, 'card')
+        self.customer.token = token
+        payway_customer_number, customer_errors = self.client.create_customer(self.customer)
+        # update customer with another card
+        card_token, card_errors = self.client.create_token(self.declined_card, 'card')
+        ps, ps_errors = self.client.update_payment_setup(card_token, payway_customer_number)
+        self.assertIsNone(ps_errors)
+        self.assertIsNotNone(ps)

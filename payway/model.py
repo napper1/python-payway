@@ -49,7 +49,7 @@ class Customer(object):
 
     def __init__(self, custom_id=None, customer_name=None, email_address=None, send_email_receipts=None,
                  phone_number=None, street=None, street2=None, city_name=None, state=None, postal_code=None,
-                 token=None):
+                 token=None, customer_number=None):
         self.custom_id = custom_id
         self.customer_name = customer_name
         self.email_address = email_address
@@ -61,6 +61,7 @@ class Customer(object):
         self.state = state
         self.postal_code = postal_code
         self.token = token
+        self.customer_number = customer_number
 
     def to_dict(self):
         return {
@@ -74,7 +75,27 @@ class Customer(object):
             "state": self.state,
             "postalCode": self.postal_code,
             "singleUseTokenId": self.token,
+            "customer_number": self.customer_number,
         }
+
+    @staticmethod
+    def from_dict(response):
+        # parse PayWay Customer response data
+        customer = Customer()
+        contact = response.get("contact")
+        customer.customer_name = contact.get("customerName")
+        customer.email_address = contact.get("emailAddress")
+        customer.send_email_receipts = contact.get("sendEmailReceipts")
+        customer.phone_number = contact.get("phoneNumber")
+        address = contact.get("address")
+        customer.street = address.get("street1")
+        customer.street2 = address.get("street2")
+        customer.city_name = address.get("cityName")
+        customer.state = address.get("state")
+        customer.postal_code = address.get("postalCode")
+        customer.customer_number = response.get("customerNumber")
+        # TODO: parse paymentSetup, custom fields and other fields
+        return customer
 
 
 class PaymentError(object):
@@ -377,3 +398,19 @@ class Merchant(object):
         merchant.surcharge_bsb = payway_obj.get('surchargeBsb')
         merchant.surcharge_account_number = payway_obj.get('surchargeAccountNumber')
         return merchant
+
+
+class PaymentSetup(object):
+    payment_method = None
+    stopped = None
+    credit_card = None
+    merchant = None
+
+    @staticmethod
+    def from_dict(response):
+        ps = PaymentSetup()
+        ps.payment_method = response.get("paymentMethod")
+        ps.stopped = response.get("stopped")
+        ps.credit_card = Card().from_dict(response.get("creditCard"))
+        ps.merchant = Merchant().from_dict(response.get("merchant"))
+        return ps

@@ -5,8 +5,7 @@ from payway.conf import TOKEN_NO_REDIRECT, CUSTOMER_URL, TRANSACTION_URL
 from payway.constants import CREDIT_CARD_PAYMENT_CHOICE, BANK_ACCOUNT_PAYMENT_CHOICE, PAYMENT_METHOD_CHOICES, \
     VALID_PAYMENT_METHOD_CHOICES
 from payway.exception import PaywayError
-from payway.model import Customer, Transaction, PaymentError, ServerError
-
+from payway.model import Customer, Transaction, PaymentError, ServerError, PaymentSetup
 
 logger = getLogger(__name__)
 
@@ -47,6 +46,9 @@ class Client(object):
             logger.error('Merchant ID, bank account ID, secret API key, publishable API key are '
                          'invalid')
             raise PaywayError(message='Invalid credentials', code='INVALID_API_CREDENTIALS')
+
+    def get_request(self, endpoint):
+        return requests.get(url=endpoint, auth=(self.secret_api_key, ''))
 
     def post_request(self, endpoint, data, auth=None):
         if not auth:
@@ -90,14 +92,14 @@ class Client(object):
             return new_token_id, errors
 
     def create_customer(self, customer):
-        # use kwargs?
+        # POST /customers to have PayWay generate the customer number
+        # PUT /customers/{customerNumber} to use your own customer number
+
         data = customer.to_dict()
         data.update({
             "merchantId": self.merchant_id,
             "bankAccountId": self.bank_account_id
         })
-        # POST /customers to have PayWay generate the customer number
-        # PUT /customers/{customerNumber} to use your own customer number
 
         logger.info('Sending Create Customer request to PayWay.')
 
@@ -153,3 +155,74 @@ class Client(object):
             payway_error = ServerError().from_dict(errors)
             message = payway_error.to_message()
             raise PaywayError(code=response.status_code, message=message)
+
+    def get_transaction(self, transaction_id):
+        endpoint = '%s/%s' % (TRANSACTION_URL, str(transaction_id))
+        response = self.get_request(endpoint)
+        logger.info('Response from server: %s' % response)
+        errors = self._validate_response(response)
+        if errors:
+            return None, errors
+        else:
+            transaction = Transaction.from_json(response.json())
+        return transaction, errors
+
+    def void_transaction(self, transaction_id):
+        endpoint = '%s/%s/void' % (TRANSACTION_URL, transaction_id)
+        response = self.post_request(endpoint, data={})
+        errors = self._validate_response(response)
+        if errors:
+            return None, errors
+        else:
+            transaction = Transaction.from_json(response.json())
+        return transaction, errors
+
+    def refund_transaction(self, transaction_id, amount, order_id=None, ip_address=None):
+        endpoint = TRANSACTION_URL
+        data = {
+            'transactionType': 'refund',
+            'parentTransactionId': transaction_id,
+            'principalAmount': amount,
+        }
+        if order_id:
+            data['orderNumber'] = order_id
+        if ip_address:
+            data['customerIpAddress'] = ip_address
+        response = self.post_request(endpoint, data)
+        errors = self._validate_response(response)
+        if errors:
+            return None, errors
+        else:
+            transaction = Transaction.from_json(response)
+        return transaction, errors
+
+    def get_customer(self, customer_id):
+        """
+        Returns a PayWay Customer's Payment Setup, [Payment] Schedule, Contact Details, Custom Fields and Notes
+        """
+        endpoint = '%s/%s' % (CUSTOMER_URL, str(customer_id))
+        response = self.get_request(endpoint)
+        errors = self._validate_response(response)
+        if errors:
+            return None, errors
+        else:
+            customer = Customer.from_dict(response.json())
+        return customer, errors
+
+    def update_payment_setup(self, token, customer_id):
+        """
+        Updates the Customer's Payment Setup with a new Credit Card or Bank Account.
+        """
+        endpoint = '%s/%s/payment-setup' % (CUSTOMER_URL, str(customer_id))
+        data = {
+            "singleUseTokenId": token,
+            "merchantId": self.merchant_id,
+            "bankAccountId": self.bank_account_id
+        }
+        response = self.put_request(endpoint, data)
+        errors = self._validate_response(response)
+        if errors:
+            return None, errors
+        else:
+            ps = PaymentSetup.from_dict(response.json())
+        return ps, errors
