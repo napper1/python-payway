@@ -282,7 +282,7 @@ class Transaction(object):
         }
 
     @staticmethod
-    def from_json(response):
+    def from_dict(response):
         transaction = Transaction()
         transaction.transaction_id = response.get('transactionId')
         transaction.receipt_number = response.get("receiptNumber")
@@ -333,7 +333,8 @@ class Merchant(object):
     settlementBsb 	The BSB of your settlement bank account
     settlementAccountNumber 	The account number of your settlement bank account
     surchargeBsb 	If surcharges are settled separately, the BSB for your surcharge settlement account
-    surchargeAccountNumber 	If surcharges are settled separately, the account number for your surcharge settlement account
+    surchargeAccountNumber 	If surcharges are settled separately, the account number for your surcharge settlement
+                            account
     """
     merchant_id = None
     merchant_name = None

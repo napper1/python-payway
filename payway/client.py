@@ -4,7 +4,7 @@ import requests
 from payway.conf import TOKEN_NO_REDIRECT, CUSTOMER_URL, TRANSACTION_URL
 from payway.constants import CREDIT_CARD_PAYMENT_CHOICE, BANK_ACCOUNT_PAYMENT_CHOICE, PAYMENT_METHOD_CHOICES, \
     VALID_PAYMENT_METHOD_CHOICES
-from payway.exception import PaywayError
+from payway.exceptions import PaywayError
 from payway.model import Customer, Transaction, PaymentError, ServerError, PaymentSetup
 
 logger = getLogger(__name__)
@@ -63,9 +63,7 @@ class Client(object):
     def create_token(self, payway_obj, payment_method):
         """
         Creates a single use token for a Customer's payment setup (credit card or bank account)
-        by POSTing to PayWay and reading the token from the redirect response URL.
-        Takes a valid form.
-        N.B. Creating a token doesn't mean the payment setup details are correct.
+        payment_method: one of `card` or `direct_debit`
         """
         data = payway_obj.to_dict()
         if payment_method == 'card':
@@ -134,10 +132,13 @@ class Client(object):
             return None, errors
         else:
             # convert response to Transaction object
-            transaction = Transaction.from_json(response.json())
+            transaction = Transaction.from_dict(response.json())
         return transaction, errors
 
     def _validate_response(self, response):
+        """
+        Validates all responses from PayWay to catch documented PayWay errors.
+        """
 
         if response.status_code in [400, 401, 403, 405, 406, 407, 409, 410, 415, 429, 501, 503]:
             http_error_msg = '%s Client Error: %s for url: %s' % (response.status_code, response.reason, response.url)
@@ -156,6 +157,9 @@ class Client(object):
             message = payway_error.to_message()
             raise PaywayError(code=response.status_code, message=message)
 
+        else:
+            return None
+
     def get_transaction(self, transaction_id):
         endpoint = '%s/%s' % (TRANSACTION_URL, str(transaction_id))
         response = self.get_request(endpoint)
@@ -164,7 +168,7 @@ class Client(object):
         if errors:
             return None, errors
         else:
-            transaction = Transaction.from_json(response.json())
+            transaction = Transaction.from_dict(response.json())
         return transaction, errors
 
     def void_transaction(self, transaction_id):
@@ -174,7 +178,7 @@ class Client(object):
         if errors:
             return None, errors
         else:
-            transaction = Transaction.from_json(response.json())
+            transaction = Transaction.from_dict(response.json())
         return transaction, errors
 
     def refund_transaction(self, transaction_id, amount, order_id=None, ip_address=None):
@@ -193,7 +197,7 @@ class Client(object):
         if errors:
             return None, errors
         else:
-            transaction = Transaction.from_json(response)
+            transaction = Transaction.from_dict(response)
         return transaction, errors
 
     def get_customer(self, customer_id):
