@@ -79,6 +79,14 @@ class TestClient(unittest.TestCase):
             order_number='5100',
             ip_address='127.0.0.1',
         )
+        cls.pre_auth_payment = Payment(
+            customer_number='',
+            transaction_type='preAuth',
+            amount='2.15',
+            currency='aud',
+            order_number='5110',
+            ip_address='127.0.0.1',
+        )
         cls.bank_account = BankAccount(
             account_name='Test',
             bsb='000-000',
@@ -310,3 +318,15 @@ class TestClient(unittest.TestCase):
         ps, ps_errors = self.client.update_payment_setup(card_token, payway_customer_number)
         self.assertIsNone(ps_errors)
         self.assertIsNotNone(ps)
+
+    def test_pre_auth_payment(self):
+        card = self.card
+        token, errors = self.client.create_token(card, 'card')
+        self.customer.token = token
+        payway_customer_number, customer_errors = self.client.create_customer(self.customer)
+        payment = self.pre_auth_payment
+        payment.customer_number = payway_customer_number
+        payment.order_number = '5110'
+        transaction, errors = self.client.process_payment(payment)
+        self.assertIsNotNone(transaction)
+        self.assertIsNotNone(transaction.transaction_id)
