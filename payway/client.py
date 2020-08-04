@@ -88,6 +88,12 @@ class Client(object):
             token_response = TokenResponse().from_dict(response.json())
             return token_response, errors
 
+    def create_card_token(self, card):
+        return self.create_token(card, 'card')
+
+    def create_bank_account_token(self, bank_account):
+        return self.create_token(bank_account, 'direct_debit')
+
     def create_customer(self, customer):
         # POST /customers to have PayWay generate the customer number
         # PUT /customers/{customerNumber} to use your own customer number

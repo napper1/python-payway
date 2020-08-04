@@ -100,13 +100,13 @@ class TestClient(unittest.TestCase):
 
     def test_create_token(self):
         card = self.card
-        token_response, errors = self.client.create_token(card, 'card')
+        token_response, errors = self.client.create_card_token(card)
 
         self.assertIsNotNone(token_response.token)
 
     def test_create_customer(self):
         card = self.card
-        token_response, errors = self.client.create_token(card, 'card')
+        token_response, errors = self.client.create_card_token(card)
         customer = self.customer
         customer.token = token_response.token
         payway_customer, customer_errors = self.client.create_customer(customer)
@@ -116,7 +116,7 @@ class TestClient(unittest.TestCase):
 
     def test_process_payment(self):
         card = self.card
-        token_response, errors = self.client.create_token(card, 'card')
+        token_response, errors = self.client.create_card_token(card)
         customer = self.customer
         customer.token = token_response.token
         payway_customer, customer_errors = self.client.create_customer(customer)
@@ -134,7 +134,7 @@ class TestClient(unittest.TestCase):
 
     def test_expiry_date(self):
         card = self.expired_card
-        token_response, errors = self.client.create_token(card, 'card')
+        token_response, errors = self.client.create_card_token(card)
 
         self.assertIsNone(token_response)
         self.assertIsNotNone(errors)
@@ -146,7 +146,7 @@ class TestClient(unittest.TestCase):
     def test_expired_card(self):
         card = copy.deepcopy(self.expired_card)
         card.expiry_date_year = '30'
-        token_response, errors = self.client.create_token(card, 'card')
+        token_response, errors = self.client.create_card_token(card)
         self.assertIsNotNone(token_response.token)
         customer = self.customer
         customer.token = token_response.token
@@ -164,7 +164,7 @@ class TestClient(unittest.TestCase):
 
     def test_stolen_card(self):
         card = self.stolen_card
-        token_response, errors = self.client.create_token(card, 'card')
+        token_response, errors = self.client.create_card_token(card)
         self.customer.token = token_response.token
         payway_customer, customer_errors = self.client.create_customer(self.customer)
         payment = self.payment
@@ -180,7 +180,7 @@ class TestClient(unittest.TestCase):
 
     def test_declined_card(self):
         card = self.declined_card
-        token_response, errors = self.client.create_token(card, 'card')
+        token_response, errors = self.client.create_card_token(card)
         self.customer.token = token_response.token
         payway_customer, customer_errors = self.client.create_customer(self.customer)
         payment = self.payment
@@ -196,7 +196,7 @@ class TestClient(unittest.TestCase):
 
     def test_direct_debit_payment(self):
         bank_account = self.bank_account
-        token_response, errors = self.client.create_token(bank_account, 'direct_debit')
+        token_response, errors = self.client.create_bank_account_token(bank_account)
         token = token_response.token
         self.assertIsNotNone(token)
         self.customer.token = token
@@ -214,7 +214,7 @@ class TestClient(unittest.TestCase):
 
     def test_invalid_direct_debit(self):
         bank_account = self.invalid_bank_account
-        token_response, errors = self.client.create_token(bank_account, 'direct_debit')
+        token_response, errors = self.client.create_bank_account_token(bank_account)
         self.assertIsNotNone(errors)
         payway_error = errors[0]
         self.assertEqual(payway_error.message, 'Invalid BSB.')
@@ -223,7 +223,7 @@ class TestClient(unittest.TestCase):
         # create a transaction using valid card
         # then poll PayWay for transaction details
         card = self.card
-        token_response, errors = self.client.create_token(card, 'card')
+        token_response, errors = self.client.create_card_token(card)
         self.customer.token = token_response.token
         payway_customer, customer_errors = self.client.create_customer(self.customer)
         payment = self.payment
@@ -241,7 +241,7 @@ class TestClient(unittest.TestCase):
         # create a transaction using direct debit
         # then poll PayWay for updated transaction
         bank_account = self.bank_account
-        token_response, errors = self.client.create_token(bank_account, 'direct_debit')
+        token_response, errors = self.client.create_bank_account_token(bank_account)
         self.customer.token = token_response.token
         payway_customer, customer_errors = self.client.create_customer(self.customer)
         payment = self.payment
@@ -258,7 +258,7 @@ class TestClient(unittest.TestCase):
     def test_void(self):
         # void a transaction in PayWay
         card = self.card
-        token_response, errors = self.client.create_token(card, 'card')
+        token_response, errors = self.client.create_card_token(card)
         self.customer.token = token_response.token
         payway_customer, customer_errors = self.client.create_customer(self.customer)
         payment = self.payment
@@ -275,7 +275,7 @@ class TestClient(unittest.TestCase):
     def test_refund(self):
         # create a transaction then refund in PayWay
         card = self.card
-        token_response, errors = self.client.create_token(card, 'card')
+        token_response, errors = self.client.create_card_token(card)
         self.customer.token = token_response.token
         payway_customer, customer_errors = self.client.create_customer(self.customer)
         payment = self.payment
@@ -300,7 +300,7 @@ class TestClient(unittest.TestCase):
     def test_get_customer(self):
         # get all customer details from PayWay
         card = self.card
-        token_response, errors = self.client.create_token(card, 'card')
+        token_response, errors = self.client.create_card_token(card)
         self.customer.token = token_response.token
         payway_customer, customer_errors = self.client.create_customer(self.customer)
 
@@ -312,18 +312,18 @@ class TestClient(unittest.TestCase):
     def test_update_payment_setup_card(self):
         # update card or bank account in PayWay from token
         card = self.card
-        token_response, errors = self.client.create_token(card, 'card')
+        token_response, errors = self.client.create_card_token(card)
         self.customer.token = token_response.token
         payway_customer, customer_errors = self.client.create_customer(self.customer)
         # update customer with another card
-        card_token_response, card_errors = self.client.create_token(self.declined_card, 'card')
+        card_token_response, card_errors = self.client.create_card_token(self.declined_card)
         ps, ps_errors = self.client.update_payment_setup(card_token_response.token, payway_customer.customer_number)
         self.assertIsNone(ps_errors)
         self.assertIsNotNone(ps)
 
     def test_pre_auth_payment(self):
         card = self.card
-        token_response, errors = self.client.create_token(card, 'card')
+        token_response, errors = self.client.create_card_token(card)
         self.customer.token = token_response.token
         payway_customer, customer_errors = self.client.create_customer(self.customer)
         payment = self.pre_auth_payment
