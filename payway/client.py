@@ -5,7 +5,7 @@ from payway.conf import TOKEN_NO_REDIRECT, CUSTOMER_URL, TRANSACTION_URL
 from payway.constants import CREDIT_CARD_PAYMENT_CHOICE, BANK_ACCOUNT_PAYMENT_CHOICE, PAYMENT_METHOD_CHOICES, \
     VALID_PAYMENT_METHOD_CHOICES
 from payway.exceptions import PaywayError
-from payway.model import Customer, Transaction, PaymentError, ServerError, PaymentSetup
+from payway.model import Customer, Transaction, PaymentError, ServerError, PaymentSetup, TokenResponse
 
 logger = getLogger(__name__)
 
@@ -85,9 +85,8 @@ class Client(object):
         if errors:
             return None, errors
         else:
-            new_token_id = response.json().get("singleUseTokenId")
-            # todo: could return full response which has credit card (masked) too along with token id
-            return new_token_id, errors
+            token_response = TokenResponse().from_dict(response.json())
+            return token_response, errors
 
     def create_customer(self, customer):
         # POST /customers to have PayWay generate the customer number
@@ -113,9 +112,8 @@ class Client(object):
         if errors:
             return None, errors
         else:
-            customer_number = response.json()['customerNumber']
-            # todo: could return a Customer object with the updated payway customer number in it
-            return customer_number, errors
+            customer = Customer().from_dict(response.json())
+            return customer, errors
 
     def process_payment(self, payment):
         """

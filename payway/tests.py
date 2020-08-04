@@ -100,27 +100,28 @@ class TestClient(unittest.TestCase):
 
     def test_create_token(self):
         card = self.card
-        token, errors = self.client.create_token(card, 'card')
+        token_response, errors = self.client.create_token(card, 'card')
 
-        self.assertIsNotNone(token)
+        self.assertIsNotNone(token_response.token)
 
     def test_create_customer(self):
         card = self.card
-        token, errors = self.client.create_token(card, 'card')
+        token_response, errors = self.client.create_token(card, 'card')
         customer = self.customer
-        customer.token = token
-        payway_customer_number, customer_errors = self.client.create_customer(customer)
+        customer.token = token_response.token
+        payway_customer, customer_errors = self.client.create_customer(customer)
+        payway_customer_number = payway_customer.customer_number
 
         self.assertIsNotNone(payway_customer_number)
 
     def test_process_payment(self):
         card = self.card
-        token, errors = self.client.create_token(card, 'card')
+        token_response, errors = self.client.create_token(card, 'card')
         customer = self.customer
-        customer.token = token
-        payway_customer_number, customer_errors = self.client.create_customer(customer)
+        customer.token = token_response.token
+        payway_customer, customer_errors = self.client.create_customer(customer)
         payment = self.payment
-        payment.customer_number = payway_customer_number
+        payment.customer_number = payway_customer.customer_number
         payment.order_number = '5100'
         transaction, errors = self.client.process_payment(payment)
 
@@ -133,9 +134,9 @@ class TestClient(unittest.TestCase):
 
     def test_expiry_date(self):
         card = self.expired_card
-        token, errors = self.client.create_token(card, 'card')
+        token_response, errors = self.client.create_token(card, 'card')
 
-        self.assertIsNone(token)
+        self.assertIsNone(token_response)
         self.assertIsNotNone(errors)
         self.assertIsInstance(errors, list)
         payway_error = errors[0]
@@ -145,13 +146,13 @@ class TestClient(unittest.TestCase):
     def test_expired_card(self):
         card = copy.deepcopy(self.expired_card)
         card.expiry_date_year = '30'
-        token, errors = self.client.create_token(card, 'card')
-        self.assertIsNotNone(token)
+        token_response, errors = self.client.create_token(card, 'card')
+        self.assertIsNotNone(token_response.token)
         customer = self.customer
-        customer.token = token
-        payway_customer_number, customer_errors = self.client.create_customer(customer)
+        customer.token = token_response.token
+        payway_customer, customer_errors = self.client.create_customer(customer)
         payment = self.payment
-        payment.customer_number = payway_customer_number
+        payment.customer_number = payway_customer.customer_number
         payment.order_number = '5101'
         transaction, errors = self.client.process_payment(payment)
 
@@ -163,11 +164,11 @@ class TestClient(unittest.TestCase):
 
     def test_stolen_card(self):
         card = self.stolen_card
-        token, errors = self.client.create_token(card, 'card')
-        self.customer.token = token
-        payway_customer_number, customer_errors = self.client.create_customer(self.customer)
+        token_response, errors = self.client.create_token(card, 'card')
+        self.customer.token = token_response.token
+        payway_customer, customer_errors = self.client.create_customer(self.customer)
         payment = self.payment
-        payment.customer_number = payway_customer_number
+        payment.customer_number = payway_customer.customer_number
         payment.order_number = '5102'
         transaction, errors = self.client.process_payment(payment)
 
@@ -179,11 +180,11 @@ class TestClient(unittest.TestCase):
 
     def test_declined_card(self):
         card = self.declined_card
-        token, errors = self.client.create_token(card, 'card')
-        self.customer.token = token
-        payway_customer_number, customer_errors = self.client.create_customer(self.customer)
+        token_response, errors = self.client.create_token(card, 'card')
+        self.customer.token = token_response.token
+        payway_customer, customer_errors = self.client.create_customer(self.customer)
         payment = self.payment
-        payment.customer_number = payway_customer_number
+        payment.customer_number = payway_customer.customer_number
         payment.order_number = '5103'
         transaction, errors = self.client.process_payment(payment)
 
@@ -195,12 +196,13 @@ class TestClient(unittest.TestCase):
 
     def test_direct_debit_payment(self):
         bank_account = self.bank_account
-        token, errors = self.client.create_token(bank_account, 'direct_debit')
+        token_response, errors = self.client.create_token(bank_account, 'direct_debit')
+        token = token_response.token
         self.assertIsNotNone(token)
         self.customer.token = token
-        payway_customer_number, customer_errors = self.client.create_customer(self.customer)
+        payway_customer, customer_errors = self.client.create_customer(self.customer)
         payment = self.payment
-        payment.customer_number = payway_customer_number
+        payment.customer_number = payway_customer.customer_number
         payment.order_number = '5104'
         transaction, errors = self.client.process_payment(payment)
 
@@ -212,7 +214,7 @@ class TestClient(unittest.TestCase):
 
     def test_invalid_direct_debit(self):
         bank_account = self.invalid_bank_account
-        token, errors = self.client.create_token(bank_account, 'direct_debit')
+        token_response, errors = self.client.create_token(bank_account, 'direct_debit')
         self.assertIsNotNone(errors)
         payway_error = errors[0]
         self.assertEqual(payway_error.message, 'Invalid BSB.')
@@ -221,11 +223,11 @@ class TestClient(unittest.TestCase):
         # create a transaction using valid card
         # then poll PayWay for transaction details
         card = self.card
-        token, errors = self.client.create_token(card, 'card')
-        self.customer.token = token
-        payway_customer_number, customer_errors = self.client.create_customer(self.customer)
+        token_response, errors = self.client.create_token(card, 'card')
+        self.customer.token = token_response.token
+        payway_customer, customer_errors = self.client.create_customer(self.customer)
         payment = self.payment
-        payment.customer_number = payway_customer_number
+        payment.customer_number = payway_customer.customer_number
         payment.order_number = '5105'
         transaction, errors = self.client.process_payment(payment)
         self.assertIsNotNone(transaction)
@@ -239,11 +241,11 @@ class TestClient(unittest.TestCase):
         # create a transaction using direct debit
         # then poll PayWay for updated transaction
         bank_account = self.bank_account
-        token, errors = self.client.create_token(bank_account, 'direct_debit')
-        self.customer.token = token
-        payway_customer_number, customer_errors = self.client.create_customer(self.customer)
+        token_response, errors = self.client.create_token(bank_account, 'direct_debit')
+        self.customer.token = token_response.token
+        payway_customer, customer_errors = self.client.create_customer(self.customer)
         payment = self.payment
-        payment.customer_number = payway_customer_number
+        payment.customer_number = payway_customer.customer_number
         payment.order_number = '5106'
         transaction, errors = self.client.process_payment(payment)
         self.assertIsNotNone(transaction)
@@ -256,11 +258,11 @@ class TestClient(unittest.TestCase):
     def test_void(self):
         # void a transaction in PayWay
         card = self.card
-        token, errors = self.client.create_token(card, 'card')
-        self.customer.token = token
-        payway_customer_number, customer_errors = self.client.create_customer(self.customer)
+        token_response, errors = self.client.create_token(card, 'card')
+        self.customer.token = token_response.token
+        payway_customer, customer_errors = self.client.create_customer(self.customer)
         payment = self.payment
-        payment.customer_number = payway_customer_number
+        payment.customer_number = payway_customer.customer_number
         payment.order_number = '5105'
         transaction, errors = self.client.process_payment(payment)
         self.assertIsNotNone(transaction)
@@ -273,11 +275,11 @@ class TestClient(unittest.TestCase):
     def test_refund(self):
         # create a transaction then refund in PayWay
         card = self.card
-        token, errors = self.client.create_token(card, 'card')
-        self.customer.token = token
-        payway_customer_number, customer_errors = self.client.create_customer(self.customer)
+        token_response, errors = self.client.create_token(card, 'card')
+        self.customer.token = token_response.token
+        payway_customer, customer_errors = self.client.create_customer(self.customer)
         payment = self.payment
-        payment.customer_number = payway_customer_number
+        payment.customer_number = payway_customer.customer_number
         payment.order_number = '5106'
         transaction, errors = self.client.process_payment(payment)
         self.assertIsNotNone(transaction)
@@ -298,34 +300,34 @@ class TestClient(unittest.TestCase):
     def test_get_customer(self):
         # get all customer details from PayWay
         card = self.card
-        token, errors = self.client.create_token(card, 'card')
-        self.customer.token = token
-        payway_customer_number, customer_errors = self.client.create_customer(self.customer)
+        token_response, errors = self.client.create_token(card, 'card')
+        self.customer.token = token_response.token
+        payway_customer, customer_errors = self.client.create_customer(self.customer)
 
-        customer, customer_errors = self.client.get_customer(payway_customer_number)
+        customer, customer_errors = self.client.get_customer(payway_customer.customer_number)
         self.assertIsNotNone(customer)
         self.assertIsNone(customer_errors)
-        self.assertEqual(customer.customer_number, payway_customer_number)
+        self.assertEqual(customer.customer_number, payway_customer.customer_number)
 
     def test_update_payment_setup_card(self):
         # update card or bank account in PayWay from token
         card = self.card
-        token, errors = self.client.create_token(card, 'card')
-        self.customer.token = token
-        payway_customer_number, customer_errors = self.client.create_customer(self.customer)
+        token_response, errors = self.client.create_token(card, 'card')
+        self.customer.token = token_response.token
+        payway_customer, customer_errors = self.client.create_customer(self.customer)
         # update customer with another card
-        card_token, card_errors = self.client.create_token(self.declined_card, 'card')
-        ps, ps_errors = self.client.update_payment_setup(card_token, payway_customer_number)
+        card_token_response, card_errors = self.client.create_token(self.declined_card, 'card')
+        ps, ps_errors = self.client.update_payment_setup(card_token_response.token, payway_customer.customer_number)
         self.assertIsNone(ps_errors)
         self.assertIsNotNone(ps)
 
     def test_pre_auth_payment(self):
         card = self.card
-        token, errors = self.client.create_token(card, 'card')
-        self.customer.token = token
-        payway_customer_number, customer_errors = self.client.create_customer(self.customer)
+        token_response, errors = self.client.create_token(card, 'card')
+        self.customer.token = token_response.token
+        payway_customer, customer_errors = self.client.create_customer(self.customer)
         payment = self.pre_auth_payment
-        payment.customer_number = payway_customer_number
+        payment.customer_number = payway_customer.customer_number
         payment.order_number = '5110'
         transaction, errors = self.client.process_payment(payment)
         self.assertIsNotNone(transaction)

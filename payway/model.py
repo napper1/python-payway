@@ -37,7 +37,10 @@ class Card(object):
     @staticmethod
     def from_dict(payway_card):
         card = Card()
-        card.card_number = payway_card.get("cardNumber")
+        if payway_card.get("maskedCardNumber"):
+            card.card_number = payway_card.get("maskedCardNumber")
+        else:
+            card.card_number = payway_card.get("cardNumber")
         card.cvn = payway_card.get("cvn")
         card.card_holder_name = payway_card.get("cardholderName")
         card.expiry_date_month = payway_card.get("expiryDateMonth")
@@ -49,7 +52,7 @@ class Customer(object):
 
     def __init__(self, custom_id=None, customer_name=None, email_address=None, send_email_receipts=None,
                  phone_number=None, street=None, street2=None, city_name=None, state=None, postal_code=None,
-                 token=None, customer_number=None, payment_setup=None):
+                 token=None, customer_number=None, payment_setup=None, custom_fields=None):
         self.custom_id = custom_id
         self.customer_name = customer_name
         self.email_address = email_address
@@ -63,6 +66,7 @@ class Customer(object):
         self.token = token
         self.customer_number = customer_number
         self.payment_setup = payment_setup
+        self.custom_fields = custom_fields
 
     def to_dict(self):
         return {
@@ -99,7 +103,8 @@ class Customer(object):
         if response.get("paymentSetup") is not None:
             customer.payment_setup = PaymentSetup().from_dict(response.get("paymentSetup"))
 
-        # TODO: parse custom fields
+        if response.get("customFields") is not None:
+            customer.custom_fields = response.get("customFields")
 
         return customer
 
@@ -376,6 +381,25 @@ class PaymentSetup(object):
         ps = PaymentSetup()
         ps.payment_method = response.get("paymentMethod")
         ps.stopped = response.get("stopped")
-        ps.credit_card = Card().from_dict(response.get("creditCard"))
-        ps.merchant = Merchant().from_dict(response.get("merchant"))
+        if response.get("creditCard") is not None:
+            ps.credit_card = Card().from_dict(response.get("creditCard"))
+        if response.get("merchant") is not None:
+            ps.merchant = Merchant().from_dict(response.get("merchant"))
         return ps
+
+
+class TokenResponse(object):
+    token = None
+    payment_method = None
+    card = None
+    bank_account = None
+
+    @staticmethod
+    def from_dict(response):
+        tr = TokenResponse()
+        tr.token = response.get("singleUseTokenId")
+        tr.payment_method = response.get("paymentMethod")
+        if response.get("creditCard") is not None:
+            card = Card().from_dict(response["creditCard"])
+            tr.card = card
+        return tr
