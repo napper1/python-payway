@@ -250,7 +250,7 @@ class Transaction(object):
             "declinedDate": self.declined_date,
             "parentTransaction": self.parent_transaction,
             "customerIpAddress": self.ip_address,
-            "fraudResult": self.fraud_result.to_dict(),
+            "fraudResult": self.fraud_result,
             "customerIpCountry": self.ip_country,
             "cardCountry": self.card_country,
             "customFields": self.custom_fields,
@@ -294,78 +294,13 @@ class Transaction(object):
         transaction.declined_date = response.get("declinedDate")
         transaction.parent_transaction = response.get("parentTransaction")
         transaction.ip_address = response.get("customerIpAddress")
-
-        if response.get("fraudResult") is not None:
-            transaction.fraud_result = FraudResult.from_dict(response.get("fraudResult"))
-
+        transaction.fraud_result = response.get("fraudResult")
         transaction.ip_country = response.get("customerIpCountry")
         transaction.card_country = response.get("cardCountry")
         transaction.custom_fields = response.get("customFields")
         transaction.is_voidable = response.get("isVoidable")
         transaction.is_refundable = response.get("isRefundable")
         return transaction
-
-
-class FraudResult(object):
-    """
-    ok 	Payment was not unusual
-    skip 	Fraud Guard was skipped for this payment
-    velcty 	Many payments using the same credit card were made in a short period of time
-    lrgamt 	Payment is unusually large
-    hrskip 	Customer connected from a high-risk country (e.g. Nigeria). See customerIpCountry
-    anprxy 	Customer connected using an anonymous or suspicious proxy
-    blckip 	Customer connected from country where you do not do business. See customerIpCountry
-    blkbin 	The bank which issued the credit card is not in a country where you do business. See cardCountry
-    binmip 	Customer is in a different country to the bank which issued the credit card. See customerIpCountry and cardCountry
-    blkipa 	IP address is blocked
-    blkpan 	Credit card number is blocked
-    error 	Contact Technical Support
-    """
-    ok = None
-    skip = None
-    velcty = None
-    lrgamt = None
-    hrskip = None
-    anprxy = None
-    blckip = None
-    blkbin = None
-    binmip = None
-    blkipa = None
-    blkpan = None
-    error = None
-
-    def to_dict(self):
-        return {
-            'ok': self.ok,
-            'skip': self.skip,
-            'velcty': self.velcty,
-            'lrgamt': self.lrgamt,
-            'hrskip': self.hrskip,
-            'anprxy': self.anprxy,
-            'blckip': self.blckip,
-            'blkbin': self.blkbin,
-            'binmip': self.binmip,
-            'blkipa': self.blkipa,
-            'blkpan': self.blkpan,
-            'error': self.error,
-        }
-
-    @staticmethod
-    def from_dict(payway_obj):
-        fraud_result = FraudResult()
-        fraud_result.ok = payway_obj.get("ok")
-        fraud_result.skip = payway_obj.get('skip')
-        fraud_result.velcty = payway_obj.get('velcty')
-        fraud_result.lrgamt = payway_obj.get('lrgamt')
-        fraud_result.hrskip = payway_obj.get('hrskip')
-        fraud_result.anprxy = payway_obj.get('anprxy')
-        fraud_result.blckip = payway_obj.get('blckip')
-        fraud_result.blkbin = payway_obj.get('blkbin')
-        fraud_result.binmip = payway_obj.get('binmip')
-        fraud_result.blkipa = payway_obj.get('blkipa')
-        fraud_result.blkpan = payway_obj.get('blkpan')
-        fraud_result.error = payway_obj.get('error')
-        return fraud_result
 
 
 class Merchant(object):
