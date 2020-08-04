@@ -1,11 +1,12 @@
 # `PayWay REST API Python library`
-`Testing`
+
+Testing
 1. Sign up for a PayWay Sandbox account: https://www.payway.com.au/sandbox
 2. Test the integration by adding your PayWay REST API keys to your local environment. These keys are in Account Settings > `REST API Keys`. Copy `Publishable` and `Secret` API keys.
-3. export PAYWAY_PUBLISHABLE_API_KEY=[ your PayWay Publishable API Key ]
-4. export export PAYWAY_SECRET_API_KEY=[ your PayWay Secret API Key ]
+3. `export PAYWAY_PUBLISHABLE_API_KEY=[ your PayWay Publishable API Key ]`
+4. `export PAYWAY_SECRET_API_KEY=[ your PayWay Secret API Key ]`
 5. Run the tests to ensure the integration is working. 
-Run `python -m unittest`
+`python -m unittest`
 
 # `Make a transaction`
 1. Create a Client class with your PayWay API credentials
@@ -42,6 +43,7 @@ Run `python -m unittest`
         )`
 
 4. Create a token from your card (or bank account if direct debit)
+
 `token_response, errors = self.client.create_token(card, 'card')`
 
 `token = token_response.token`        
@@ -71,19 +73,20 @@ Run `python -m unittest`
 `payment.order_number = '5100'`
 
 6. Process transaction
+
 `transaction, errors = self.client.process_payment(payment)`    
                                  
 7. Parse the `transaction` object
 
 `if transaction.status == 'approved':`
+
 `   # process successful response`    
 
 # `Direct Debit`
 Direct debit transactions are possible by creating a token from a BankAccount object:
 
 `
-bank_account = BankAccount(
-            account_name='Test',
+bank_account = BankAccount(account_name='Test',
             bsb='000-000',
             account_number=123456,
         )
@@ -98,7 +101,9 @@ You would now store the token with the customer in PayWay the same way as the Cr
 Note: direct debit transactions are not processed initially so must be polled regularly to find the transation result from the customer's bank.
 
 Use the `get_transaction` client method to poll the transaction.
+
 `transaction, errors = self.client.get_transaction(transaction.transaction_id)` 
 
 # `Additional notes`                             
-
+PayWay API documentation
+https://www.payway.com.au/docs/rest.html
