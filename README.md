@@ -1,4 +1,13 @@
-# `PayWay REST API Python library`
+# `PayWay REST API - Python`
+
+What this library does:
+- Store customers, a card or bank account in PayWay
+- Take payment using a stored card or bank account
+- Capture a pre-authorisation
+- Void transactions
+- Refund transactions
+- Lookup or poll transactions
+- Update a customer's payment setup in PayWay
 
 Testing
 1. Sign up for a PayWay Sandbox account: https://www.payway.com.au/sandbox
@@ -9,7 +18,8 @@ Testing
 `python -m unittest`
 
 # `Make a transaction`
-1. Create a Client class with your PayWay API credentials
+
+Create a Client class with your PayWay API credentials
 
 `client = Client(merchant_id=merchant_id,
                  bank_account_id=bank_account_id,
@@ -17,7 +27,7 @@ Testing
                  secret_api_key=secret_api_key,
                  redirect_url=redirect_url)`
                  
-2. Create a Customer class with your customer's details
+Create a Customer class with your customer's details
 
 `customer = Customer(
             custom_id='c981a',
@@ -32,7 +42,7 @@ Testing
             postal_code='2000',
         )`
         
-3. Create a Card class with your customer's card details
+Create a Card class with your customer's card details
 
 `card = Card(
             card_number='4564710000000004',
@@ -42,20 +52,21 @@ Testing
             expiry_date_year='29'
         )`
 
-4. Create a token from your card (or bank account if direct debit)
+Create a token from your card (or bank account if direct debit)
 
 `token_response, errors = self.client.create_token(card, 'card')`
 
 `token = token_response.token`        
    
-5. Store the customer and their card/bank account token in PayWay
+Store the customer and their card/bank account token in PayWay
+
 `customer.token = token`
 
 `payway_customer, customer_errors = self.client.create_customer(customer)`
 
-`Note 'payway_customer' object contains full customer response fields from PayWay`
+Note the 'payway_customer' object contains the full customer response fields from PayWay.
         
-6. Create a Payment class with the payment details
+Create a Payment class with the payment details
 
 `payment = Payment(
             customer_number='',
@@ -68,22 +79,22 @@ Testing
         
 `payment.customer_number = payway_customer.customer_number`
 
-`# optionally assign an order number`
+`# optionally assign an order number from your system`
 
 `payment.order_number = '5100'`
 
-6. Process transaction
+Process transaction
 
 `transaction, errors = self.client.process_payment(payment)`    
                                  
-7. Parse the `transaction` object
+Check the `transaction` for the result
 
 `if transaction.status == 'approved':`
 
 `   # process successful response`    
 
 # `Direct Debit`
-Direct debit transactions are possible by creating a token from a BankAccount object:
+Direct debit transactions are possible by creating a token from a bank account:
 
 `
 bank_account = BankAccount(account_name='Test',
@@ -96,14 +107,22 @@ bank_account = BankAccount(account_name='Test',
 
 `token = token_response.token`
 
-You would now store the token with the customer in PayWay the same way as the Credit Card method outlined above.
+Store the token with the customer in PayWay in the same manner as the Card method outlined above.
 
-Note: direct debit transactions are not processed initially so must be polled regularly to find the transation result from the customer's bank.
+Note: direct debit transactions take days to process so must be polled regularly to find the transaction result from the customer's bank.
 
-Use the `get_transaction` client method to poll the transaction.
+Poll a transaction using the `get_transaction` method.
 
 `transaction, errors = self.client.get_transaction(transaction.transaction_id)` 
 
 # `Additional notes`                             
 PayWay API documentation
 https://www.payway.com.au/docs/rest.html
+
+It is recommended to use PayWay's Trusted Frame https://www.payway.com.au/docs/rest.html#trusted-frame
+when creating a single use token of a card or bank account so your PCI-compliance scope is reduced.  
+
+# `Fraud`
+
+Please follow PayWay's advice about reducing your risk of fraudulent transactions.
+https://www.payway.com.au/docs/card-testing.html#card-testing
