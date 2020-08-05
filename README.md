@@ -22,6 +22,9 @@ Testing
 Create a Client class with your PayWay API credentials
 
 ```
+from payway.model import *
+from payway.client import *
+
 client = Client(merchant_id=merchant_id,
                 bank_account_id=bank_account_id,
                 publishable_api_key=publishable_api_key,
@@ -56,7 +59,7 @@ card = Card(card_number='4564710000000004',
 
 Create a token from your card (or bank account if direct debit)
 
-`token_response, errors = self.client.create_card_token(card)`
+`token_response, errors = client.create_card_token(card)`
 
 `token = token_response.token`        
    
@@ -64,30 +67,25 @@ Store the customer and their card/bank account token in PayWay
 
 `customer.token = token`
 
-`payway_customer, customer_errors = self.client.create_customer(customer)`
+`payway_customer, customer_errors = client.create_customer(customer)`
 
 Note the 'payway_customer' object contains the full customer response fields from PayWay.
         
 Create a Payment class with the payment details
 
 ```
-payment = Payment(customer_number='',
+customer_number = payway_customer.customer_number
+payment = Payment(customer_number=customer_number,
                   transaction_type='payment',
                   amount='10',
                   currency='aud',
                   order_number='5100',
                   ip_address='127.0.0.1')
 ```
-     
-`payment.customer_number = payway_customer.customer_number`
-
-`# optionally assign an order number from your system`
-
-`payment.order_number = '5100'`
 
 Process transaction
 
-`transaction, errors = self.client.process_payment(payment)`    
+`transaction, errors = client.process_payment(payment)`    
                                  
 Check the `transaction` for the result
 
@@ -102,17 +100,17 @@ Direct debit transactions are possible by creating a token from a bank account:
 bank_account = BankAccount(account_name='Test', bsb='000-000', account_number=123456)
 ```
 
-`token_response, errors = self.client.create_bank_token(bank_account)`
+`token_response, errors = client.create_bank_account_token(bank_account)`
 
 `token = token_response.token`
 
-Store the token with the customer in PayWay in the same manner as the Card method outlined above.
+Store the token with a customer in PayWay using the same methods as the Card outlined above.
 
 Note: direct debit transactions take days to process so must be polled regularly to find the transaction result from the customer's bank.
 
 Poll a transaction using the `get_transaction` method.
 
-`transaction, errors = self.client.get_transaction(transaction.transaction_id)` 
+`transaction, errors = client.get_transaction(transaction.transaction_id)` 
 
 # `Additional notes`                             
 PayWay API documentation
