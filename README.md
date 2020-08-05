@@ -89,9 +89,24 @@ Process transaction
                                  
 Check the `transaction` for the result
 
-`if transaction.status == 'approved':`
+`if not errors and transaction.status == 'approved':`
 
-`   # process successful response`    
+`   # process successful response`
+
+# `Handling errors`
+
+Documented errors (such as 422 Unprocessable entity) are parsed into an PaymentError class that you can use to pass to the customer.
+https://www.payway.com.au/docs/rest.html#http-response-codes
+
+```
+if errors:
+    for error in errors: 
+        print(error.field_name)
+        print(error.message) 
+        print(error.field_name)
+# or use a method
+PaymentError().list_to_message(errors) 
+```     
 
 # `Direct Debit`
 Direct debit transactions are possible by creating a token from a bank account:
