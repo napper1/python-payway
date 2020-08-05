@@ -21,40 +21,42 @@ Testing
 
 Create a Client class with your PayWay API credentials
 
-`client = Client(merchant_id=merchant_id,
-                 bank_account_id=bank_account_id,
-                 publishable_api_key=publishable_api_key,
-                 secret_api_key=secret_api_key,
-                 redirect_url=redirect_url)`
+```
+client = Client(merchant_id=merchant_id,
+                bank_account_id=bank_account_id,
+                publishable_api_key=publishable_api_key,
+                secret_api_key=secret_api_key,
+                redirect_url=redirect_url)
+```
                  
 Create a Customer class with your customer's details
 
-`customer = Customer(
-            custom_id='c981a',
-            customer_name='John Smith',
-            email_address='johnsmith@example.com',
-            send_email_receipts=False,  # not available in sandbox
-            phone_number='0343232323',
-            street='1 Test Street',
-            street2='2 Test Street',
-            city_name='Sydney',
-            state='NSW',
-            postal_code='2000',
-        )`
+```
+customer = Customer(custom_id='c981a',
+                    customer_name='John Smith',
+                    email_address='johnsmith@example.com',
+                    send_email_receipts=False,  # not available in sandbox
+                    phone_number='0343232323',
+                    street='1 Test Street',
+                    street2='2 Test Street',
+                    city_name='Sydney',
+                    state='NSW',
+                    postal_code='2000')
+```
         
 Create a Card class with your customer's card details
 
-`card = Card(
-            card_number='4564710000000004',
+```
+card = Card(card_number='4564710000000004',
             cvn='847',
             card_holder_name='Test',
             expiry_date_month='02',
-            expiry_date_year='29'
-        )`
+            expiry_date_year='29')
+```
 
 Create a token from your card (or bank account if direct debit)
 
-`token_response, errors = self.client.create_token(card, 'card')`
+`token_response, errors = self.client.create_card_token(card)`
 
 `token = token_response.token`        
    
@@ -68,15 +70,15 @@ Note the 'payway_customer' object contains the full customer response fields fro
         
 Create a Payment class with the payment details
 
-`payment = Payment(
-            customer_number='',
-            transaction_type='payment',
-            amount='10',
-            currency='aud',
-            order_number='5100',
-            ip_address='127.0.0.1',
-        )`
-        
+```
+payment = Payment(customer_number='',
+                  transaction_type='payment',
+                  amount='10',
+                  currency='aud',
+                  order_number='5100',
+                  ip_address='127.0.0.1')
+```
+     
 `payment.customer_number = payway_customer.customer_number`
 
 `# optionally assign an order number from your system`
@@ -96,14 +98,11 @@ Check the `transaction` for the result
 # `Direct Debit`
 Direct debit transactions are possible by creating a token from a bank account:
 
-`
-bank_account = BankAccount(account_name='Test',
-            bsb='000-000',
-            account_number=123456,
-        )
-`
+```
+bank_account = BankAccount(account_name='Test', bsb='000-000', account_number=123456)
+```
 
-`token_response, errors = self.client.create_token(bank_account, 'direct_debit')`
+`token_response, errors = self.client.create_bank_token(bank_account)`
 
 `token = token_response.token`
 
