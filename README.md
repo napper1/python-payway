@@ -185,4 +185,4 @@ https://www.payway.com.au/docs/card-testing.html#card-testing
 3. `export PAYWAY_PUBLISHABLE_API_KEY="your PayWay Publishable API Key"`
 4. `export PAYWAY_SECRET_API_KEY="your PayWay Secret API Key"`
 5. Run the tests to ensure the integration is working. 
-`python -m unittest tests`
+`python -m unittest discover tests`
