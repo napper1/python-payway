@@ -179,10 +179,10 @@ class Payment(object):
     merchant_id: 	This merchant will be used for processing.
     """
 
-    def __init__(self, customer_number, transaction_type, amount, currency, order_number=None, ip_address=None,
-                 parent_transaction_id=None, token=None, merchant_id=None):
-        self.customer_number = customer_number
+    def __init__(self, transaction_type, customer_number=None, amount=None, currency=None, order_number=None,
+                 ip_address=None, parent_transaction_id=None, token=None, merchant_id=None):
         self.transaction_type = transaction_type
+        self.customer_number = customer_number
         self.amount = amount
         self.currency = currency
         self.order_number = order_number

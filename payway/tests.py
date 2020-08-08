@@ -24,13 +24,12 @@ class TestClient(unittest.TestCase):
         bank_account_id = '0000000A'
         publishable_api_key = PUBLISHABLE_API_KEY
         secret_api_key = SECRET_API_KEY
-        redirect_url = 'http://localhost'
 
         cls.client = Client(merchant_id=merchant_id,
                             bank_account_id=bank_account_id,
                             publishable_api_key=publishable_api_key,
                             secret_api_key=secret_api_key,
-                            redirect_url=redirect_url)
+                            )
         cls.customer = Customer(
             custom_id='c981a',
             customer_name='John Smith',
@@ -85,6 +84,13 @@ class TestClient(unittest.TestCase):
             amount='2.15',
             currency='aud',
             order_number='5110',
+            ip_address='127.0.0.1',
+        )
+        cls.pre_auth_capture_payment = Payment(
+            transaction_type='capture',
+            parent_transaction_id='',
+            amount='2.15',
+            order_number='5111',
             ip_address='127.0.0.1',
         )
         cls.bank_account = BankAccount(
@@ -332,3 +338,25 @@ class TestClient(unittest.TestCase):
         transaction, errors = self.client.process_payment(payment)
         self.assertIsNotNone(transaction)
         self.assertIsNotNone(transaction.transaction_id)
+
+    def test_pre_auth_capture(self):
+        card = self.card
+        token_response, errors = self.client.create_card_token(card)
+        self.customer.token = token_response.token
+        payway_customer, customer_errors = self.client.create_customer(self.customer)
+
+        # first create a pre auth transaction to be later charged from the stored card
+        payment = self.pre_auth_payment
+        payment.customer_number = payway_customer.customer_number
+        payment.order_number = '5111'
+        transaction, errors = self.client.process_payment(payment)
+        self.assertIsNotNone(transaction)
+
+        # then capture the pre auth transaction in a new payment
+        capture_payment = self.pre_auth_capture_payment
+        capture_payment.parent_transaction_id = transaction.transaction_id
+        capture_payment.order_number = '5112'
+        capture_transaction, capture_errors = self.client.process_payment(capture_payment)
+
+        self.assertIsNotNone(capture_transaction)
+        self.assertIsNotNone(capture_transaction.transaction_id)

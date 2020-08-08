@@ -20,25 +20,22 @@ class Client(object):
     bank_account_id = ''
     secret_api_key = ''
     publishable_api_key = ''
-    redirect_url = ''
 
-    def __init__(self, merchant_id, bank_account_id, secret_api_key, publishable_api_key, redirect_url=None):
+    def __init__(self, merchant_id, bank_account_id, secret_api_key, publishable_api_key):
         """
         :param merchant_id        : str                 = PayWay Merchant ID
         :param bank_account_id   : str                  = PayWay Bank Account ID
         :param secret_api_key   : str                   = PayWay Secret APi Key
         :param publishable_api_key   : str              = PayWay Publishable API Key
-        :param redirect_url   : str                     = PayWay Redirect URL
         """
 
-        self._validate_credentials(merchant_id, bank_account_id, secret_api_key, publishable_api_key, redirect_url)
+        self._validate_credentials(merchant_id, bank_account_id, secret_api_key, publishable_api_key)
         self.merchant_id = merchant_id
         self.bank_account_id = bank_account_id
         self.secret_api_key = secret_api_key
         self.publishable_api_key = publishable_api_key
-        self.redirect_url = redirect_url
 
-    def _validate_credentials(self, merchant_id, bank_account_id, secret_api_key, publishable_api_key, redirect_url):
+    def _validate_credentials(self, merchant_id, bank_account_id, secret_api_key, publishable_api_key):
         if not merchant_id or not bank_account_id or not secret_api_key or not publishable_api_key:
             if not secret_api_key or not publishable_api_key:
                 logger.error('PayWay API keys not found')
