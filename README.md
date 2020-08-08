@@ -128,31 +128,29 @@ transaction, errors = client.get_transaction(transaction.transaction_id)
 To process a credit card pre-authorisation using a credit card stored against a customer use `preAuth` as the `transaction_type` along with the customer's PayWay number, amount and currency.
 
 ```
-pre_auth_payment = Payment(
-            customer_number='',
-            transaction_type='preAuth',
-            amount='',
-            currency='aud',
-            order_number='',
-            ip_address='')
+pre_auth_payment = Payment(customer_number='',
+            			   transaction_type='preAuth',
+                           amount='',
+            			   currency='aud',
+			               order_number='',
+            			   ip_address='')
 transaction, errors = client.process_payment(pre_auth_payment)
 ```
 
 To capture the pre-authorisation supply a pre-authorisation transaction ID,  `capture` as the `transaction_type` along with an amount to capture.
 
 ```
-capture_payment = Payment(
-            transaction_type='capture',
-            parent_transaction_id='',
-            amount='',
-            order_number='',
-            ip_address='')
+capture_payment = Payment(transaction_type='capture',
+            			  parent_transaction_id='',
+			              amount='',
+            			  order_number='',
+			              ip_address='')
 transaction, errors = client.process_payment(capture_payment)
 ```
 
 # `Refunds`
 
-Refund a transaction by supplying a transaction ID and the refund amount.
+Refund a transaction by supplying a PayWay transaction ID and the refund amount.
 
 ```
 refund, errors = client.refund_transaction(
