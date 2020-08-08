@@ -21,3 +21,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
+dist/
+build/
+*.egg-info

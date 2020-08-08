@@ -8,6 +8,12 @@
 - Void transactions
 - Update a customer's payment setup in PayWay
 
+# `Installation`
+
+```
+pip install python-payway
+```
+
 # `Make a transaction`
 
 Create a Client class with your PayWay API credentials
