@@ -1,6 +1,11 @@
 
 
 class BankAccount(object):
+    """
+    account_name: str: 	Name used to open bank account.
+    bsb: str: bank account BSB
+    account_number: str: bank account number
+    """
 
     def __init__(self, account_name, bsb, account_number):
         self.account_name = account_name
@@ -15,7 +20,7 @@ class BankAccount(object):
         }
 
 
-class Card(object):
+class PayWayCard(object):
 
     def __init__(self, card_number=None, cvn=None, card_holder_name=None, expiry_date_month=None,
                  expiry_date_year=None):
@@ -36,7 +41,7 @@ class Card(object):
 
     @staticmethod
     def from_dict(payway_card):
-        card = Card()
+        card = PayWayCard()
         if payway_card.get("maskedCardNumber"):
             card.card_number = payway_card.get("maskedCardNumber")
         else:
@@ -48,11 +53,12 @@ class Card(object):
         return card
 
 
-class Customer(object):
+class PayWayCustomer(object):
 
     def __init__(self, custom_id=None, customer_name=None, email_address=None, send_email_receipts=None,
                  phone_number=None, street=None, street2=None, city_name=None, state=None, postal_code=None,
-                 token=None, customer_number=None, payment_setup=None, custom_fields=None):
+                 token=None, customer_number=None, payment_setup=None, notes=None, customer_field_1=None,
+                 customer_field_2=None, customer_field_3=None, customer_field_4=None):
         self.custom_id = custom_id
         self.customer_name = customer_name
         self.email_address = email_address
@@ -66,7 +72,11 @@ class Customer(object):
         self.token = token
         self.customer_number = customer_number
         self.payment_setup = payment_setup
-        self.custom_fields = custom_fields
+        self.notes = notes
+        self.custom_field_1 = customer_field_1
+        self.custom_field_2 = customer_field_2
+        self.custom_field_3 = customer_field_3
+        self.custom_field_4 = customer_field_4
 
     def to_dict(self):
         return {
@@ -80,13 +90,21 @@ class Customer(object):
             "state": self.state,
             "postalCode": self.postal_code,
             "singleUseTokenId": self.token,
-            "customer_number": self.customer_number,
+            "notes": self.notes,
+            "customField1": self.custom_field_1,
+            "customField2": self.custom_field_2,
+            "customField3": self.custom_field_3,
+            "customField4": self.custom_field_4,
         }
 
     @staticmethod
     def from_dict(response):
-        # parse PayWay Customer response data
-        customer = Customer()
+        """
+        Parse PayWay Customer response data
+        :param response: dict    PayWay response dictionary
+        :return:
+        """
+        customer = PayWayCustomer()
         contact = response.get("contact")
         customer.customer_name = contact.get("customerName")
         customer.email_address = contact.get("emailAddress")
@@ -104,7 +122,12 @@ class Customer(object):
             customer.payment_setup = PaymentSetup().from_dict(response.get("paymentSetup"))
 
         if response.get("customFields") is not None:
-            customer.custom_fields = response.get("customFields")
+            custom_fields = response.get("customFields")
+            for k, v in custom_fields.items():
+                setattr(customer, k, v)
+
+        if response.get("notes") is not None:
+            customer.notes = response['notes']
 
         return customer
 
@@ -118,8 +141,7 @@ class PaymentError(object):
     def from_dict(payway_response):
         """
         Returns a list of errors from PayWay
-        :param payway_response:
-        :return:
+        :param: payway_response: dict PayWay response dictionary
         """
         errors = payway_response.get("data")
         payment_errors = []
@@ -157,6 +179,9 @@ class ServerError(object):
 
     @staticmethod
     def from_dict(response):
+        """
+        :param: response: dict PayWay response dictionary
+        """
         payway_error = ServerError()
         payway_error.error_number = response.get("errorNumber")
         payway_error.trace_code = response.get("traceCode")
@@ -166,7 +191,7 @@ class ServerError(object):
         return "Error number: {} Trace code: {}".format(self.error_number, self.trace_code)
 
 
-class Payment(object):
+class PayWayPayment(object):
     """
     customer_number: 	Customer to which this payment belongs.
     transaction_type:	payment, refund, preAuth, capture or accountVerification
@@ -210,7 +235,7 @@ class Payment(object):
         return payment
 
 
-class Transaction(object):
+class PayWayTransaction(object):
     transaction_id = None
     receipt_number = None
     status = None
@@ -288,7 +313,10 @@ class Transaction(object):
 
     @staticmethod
     def from_dict(response):
-        transaction = Transaction()
+        """
+        :param: response: dict PayWay response dictionary
+        """
+        transaction = PayWayTransaction()
         transaction.transaction_id = response.get('transactionId')
         transaction.receipt_number = response.get("receiptNumber")
         transaction.status = response.get("status")
@@ -305,7 +333,7 @@ class Transaction(object):
         transaction.payment_method = response.get("paymentMethod")
 
         if response.get("creditCard") is not None:
-            transaction.card = Card.from_dict(response.get("creditCard"))
+            transaction.card = PayWayCard.from_dict(response.get("creditCard"))
 
         if response.get("merchant") is not None:
             transaction.merchant = Merchant.from_dict(response.get("merchant"))
@@ -360,6 +388,9 @@ class Merchant(object):
 
     @staticmethod
     def from_dict(payway_obj):
+        """
+        :param: payway_obj: dict PayWay response dictionary
+        """
         merchant = Merchant()
         merchant.merchant_id = payway_obj.get("merchantId")
         merchant.merchant_name = payway_obj.get('merchantName')
@@ -378,11 +409,14 @@ class PaymentSetup(object):
 
     @staticmethod
     def from_dict(response):
+        """
+        :param: response: dict PayWay response dictionary
+        """
         ps = PaymentSetup()
         ps.payment_method = response.get("paymentMethod")
         ps.stopped = response.get("stopped")
         if response.get("creditCard") is not None:
-            ps.credit_card = Card().from_dict(response.get("creditCard"))
+            ps.credit_card = PayWayCard().from_dict(response.get("creditCard"))
         if response.get("merchant") is not None:
             ps.merchant = Merchant().from_dict(response.get("merchant"))
         return ps
@@ -396,10 +430,13 @@ class TokenResponse(object):
 
     @staticmethod
     def from_dict(response):
+        """
+        :param: response: dict PayWay response dictionary
+        """
         tr = TokenResponse()
         tr.token = response.get("singleUseTokenId")
         tr.payment_method = response.get("paymentMethod")
         if response.get("creditCard") is not None:
-            card = Card().from_dict(response["creditCard"])
+            card = PayWayCard().from_dict(response["creditCard"])
             tr.card = card
         return tr

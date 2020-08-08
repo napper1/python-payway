@@ -12,7 +12,7 @@ except:
 
 from payway.client import Client
 from payway.conf import PUBLISHABLE_API_KEY, SECRET_API_KEY
-from payway.model import Card, Customer, Payment, Transaction, PaymentError, BankAccount
+from payway.model import PayWayCard, PayWayCustomer, PayWayPayment, PayWayTransaction, PaymentError, BankAccount
 
 
 class TestClient(unittest.TestCase):
@@ -30,7 +30,7 @@ class TestClient(unittest.TestCase):
                             publishable_api_key=publishable_api_key,
                             secret_api_key=secret_api_key,
                             )
-        cls.customer = Customer(
+        cls.customer = PayWayCustomer(
             custom_id='c981a',
             customer_name='John Smith',
             email_address='johnsmith@example.com',
@@ -42,35 +42,35 @@ class TestClient(unittest.TestCase):
             state='NSW',
             postal_code='2000',
         )
-        cls.card = Card(
+        cls.card = PayWayCard(
             card_number='4564710000000004',
             cvn='847',
             card_holder_name='Test',
             expiry_date_month='02',
             expiry_date_year='29'
         )
-        cls.expired_card = Card(
+        cls.expired_card = PayWayCard(
             card_number='4564710000000012',
             cvn='963',
             card_holder_name='Test',
             expiry_date_month='02',
             expiry_date_year='15'
         )
-        cls.stolen_card = Card(
+        cls.stolen_card = PayWayCard(
             card_number='5163200000000016',
             cvn='728',
             card_holder_name='Test',
             expiry_date_month='12',
             expiry_date_year='29'
         )
-        cls.declined_card = Card(
+        cls.declined_card = PayWayCard(
             card_number='4444333322221111',
             cvn='111',
             card_holder_name='Test',
             expiry_date_month='01',
             expiry_date_year='40'
         )
-        cls.payment = Payment(
+        cls.payment = PayWayPayment(
             customer_number='',
             transaction_type='payment',
             amount='10',
@@ -78,7 +78,7 @@ class TestClient(unittest.TestCase):
             order_number='5100',
             ip_address='127.0.0.1',
         )
-        cls.pre_auth_payment = Payment(
+        cls.pre_auth_payment = PayWayPayment(
             customer_number='',
             transaction_type='preAuth',
             amount='2.15',
@@ -86,7 +86,7 @@ class TestClient(unittest.TestCase):
             order_number='5110',
             ip_address='127.0.0.1',
         )
-        cls.pre_auth_capture_payment = Payment(
+        cls.pre_auth_capture_payment = PayWayPayment(
             transaction_type='capture',
             parent_transaction_id='',
             amount='2.15',
@@ -117,7 +117,16 @@ class TestClient(unittest.TestCase):
         customer.token = token_response.token
         payway_customer, customer_errors = self.client.create_customer(customer)
         payway_customer_number = payway_customer.customer_number
+        self.assertIsNotNone(payway_customer_number)
 
+    def test_create_customer_without_id(self):
+        card = self.card
+        token_response, errors = self.client.create_card_token(card)
+        customer = copy.deepcopy(self.customer)
+        customer.custom_id = ""
+        customer.token = token_response.token
+        payway_customer, customer_errors = self.client.create_customer(customer)
+        payway_customer_number = payway_customer.customer_number
         self.assertIsNotNone(payway_customer_number)
 
     def test_process_payment(self):
@@ -131,7 +140,7 @@ class TestClient(unittest.TestCase):
         payment.order_number = '5100'
         transaction, errors = self.client.process_payment(payment)
 
-        self.assertIsInstance(transaction, Transaction)
+        self.assertIsInstance(transaction, PayWayTransaction)
         self.assertIsNone(errors)
         self.assertIsNotNone(transaction.transaction_id)
         self.assertIsNotNone(transaction.receipt_number)
@@ -163,7 +172,7 @@ class TestClient(unittest.TestCase):
         transaction, errors = self.client.process_payment(payment)
 
         self.assertIsNone(errors)
-        self.assertIsInstance(transaction, Transaction)
+        self.assertIsInstance(transaction, PayWayTransaction)
         self.assertEqual(transaction.status, 'declined')
         self.assertEqual(transaction.response_code, '54')
         self.assertEqual(transaction.response_text, 'Expired card')
@@ -179,7 +188,7 @@ class TestClient(unittest.TestCase):
         transaction, errors = self.client.process_payment(payment)
 
         self.assertIsNone(errors)
-        self.assertIsInstance(transaction, Transaction)
+        self.assertIsInstance(transaction, PayWayTransaction)
         self.assertEqual(transaction.status, 'declined')
         self.assertEqual(transaction.response_code, '04')
         self.assertEqual(transaction.response_text, 'Pick-up card')
@@ -195,7 +204,7 @@ class TestClient(unittest.TestCase):
         transaction, errors = self.client.process_payment(payment)
 
         self.assertIsNone(errors)
-        self.assertIsInstance(transaction, Transaction)
+        self.assertIsInstance(transaction, PayWayTransaction)
         self.assertEqual(transaction.status, 'declined')
         self.assertEqual(transaction.response_code, '42')
         self.assertEqual(transaction.response_text, 'No universal account')
@@ -213,7 +222,7 @@ class TestClient(unittest.TestCase):
         transaction, errors = self.client.process_payment(payment)
 
         self.assertIsNone(errors)
-        self.assertIsInstance(transaction, Transaction)
+        self.assertIsInstance(transaction, PayWayTransaction)
         self.assertEqual(transaction.status, 'approved*')
         self.assertEqual(transaction.response_code, 'G')
         # PayWay direct debit payments need to be polled in the future to determine transaction outcome
@@ -360,3 +369,5 @@ class TestClient(unittest.TestCase):
 
         self.assertIsNotNone(capture_transaction)
         self.assertIsNotNone(capture_transaction.transaction_id)
+
+

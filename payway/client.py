@@ -5,15 +5,14 @@ from payway.conf import TOKEN_NO_REDIRECT, CUSTOMER_URL, TRANSACTION_URL
 from payway.constants import CREDIT_CARD_PAYMENT_CHOICE, BANK_ACCOUNT_PAYMENT_CHOICE, PAYMENT_METHOD_CHOICES, \
     VALID_PAYMENT_METHOD_CHOICES
 from payway.exceptions import PaywayError
-from payway.model import Customer, Transaction, PaymentError, ServerError, PaymentSetup, TokenResponse
+from payway.model import PayWayCustomer, PayWayTransaction, PaymentError, ServerError, PaymentSetup, TokenResponse
 
 logger = getLogger(__name__)
 
 
 class Client(object):
     """
-    Abstract client implementation.
-    Contains credentials, logger and an endpoint instance.
+    PayWay Client to connect to PayWay and perform methods given credentials
     """
 
     merchant_id = ''
@@ -28,7 +27,6 @@ class Client(object):
         :param secret_api_key   : str                   = PayWay Secret APi Key
         :param publishable_api_key   : str              = PayWay Publishable API Key
         """
-
         self._validate_credentials(merchant_id, bank_account_id, secret_api_key, publishable_api_key)
         self.merchant_id = merchant_id
         self.bank_account_id = bank_account_id
@@ -60,7 +58,8 @@ class Client(object):
     def create_token(self, payway_obj, payment_method):
         """
         Creates a single use token for a Customer's payment setup (credit card or bank account)
-        payment_method: one of `card` or `direct_debit`
+        :param payway_obj:   object: one of model.PayWayCard or model.BankAccount object
+        :param payment_method:   str: one of `card` or `direct_debit`
         """
         data = payway_obj.to_dict()
         if payment_method == 'card':
@@ -86,14 +85,30 @@ class Client(object):
             return token_response, errors
 
     def create_card_token(self, card):
+        """
+        :param card:    PayWayCard object represents a customer's credit card details
+        See model.PayWayCard
+        """
         return self.create_token(card, 'card')
 
     def create_bank_account_token(self, bank_account):
+        """
+        :param bank_account:    BankAccount object represents a customer's bank account
+        See model.BankAccount
+        """
         return self.create_token(bank_account, 'direct_debit')
 
     def create_customer(self, customer):
-        # POST /customers to have PayWay generate the customer number
-        # PUT /customers/{customerNumber} to use your own customer number
+        """
+        Create a customer in PayWay system
+
+        POST /customers to have PayWay generate the customer number
+        PUT /customers/{customerNumber} to use your own customer number
+
+        :param customer:    PayWayCustomer object represents a customer in PayWay
+        See model.PayWayCustomer
+        :return:
+        """
 
         data = customer.to_dict()
         data.update({
@@ -107,7 +122,7 @@ class Client(object):
             endpoint = '{}/{}'.format(CUSTOMER_URL, customer.custom_id)
             response = self.put_request(endpoint, data)
         else:
-            endpoint = '{}/{}'.format(CUSTOMER_URL, customer.id) % (CUSTOMER_URL, str(customer.bc_entity_id))
+            endpoint = '{}'.format(CUSTOMER_URL)
             response = self.post_request(endpoint, data)
 
         logger.info('Response from server: %s' % response)
@@ -115,13 +130,13 @@ class Client(object):
         if errors:
             return None, errors
         else:
-            customer = Customer().from_dict(response.json())
+            customer = PayWayCustomer().from_dict(response.json())
             return customer, errors
 
     def process_payment(self, payment):
         """
         Process an individual payment against a Customer with active Recurring Billing setup.
-        Amount is dollars and cents, i.e. 10.50, 0.50
+        :param payment: PayWayPayment object (see model.PayWayPayment)
         """
         data = payment.to_dict()
         endpoint = TRANSACTION_URL
@@ -132,15 +147,15 @@ class Client(object):
         if errors:
             return None, errors
         else:
-            # convert response to Transaction object
-            transaction = Transaction.from_dict(response.json())
+            # convert response to PayWayTransaction object
+            transaction = PayWayTransaction.from_dict(response.json())
         return transaction, errors
 
     def _validate_response(self, response):
         """
         Validates all responses from PayWay to catch documented PayWay errors.
+        :param response: requests response object
         """
-
         if response.status_code in [400, 401, 403, 405, 406, 407, 409, 410, 415, 429, 501, 503]:
             http_error_msg = '%s Client Error: %s for url: %s' % (response.status_code, response.reason, response.url)
             raise PaywayError(code=response.status_code, message=http_error_msg)
@@ -162,6 +177,10 @@ class Client(object):
             return None
 
     def get_transaction(self, transaction_id):
+        """
+        Lookup and return a transaction if found in PayWay
+        :param transaction_id: str  A PayWay transaction ID
+        """
         endpoint = '%s/%s' % (TRANSACTION_URL, str(transaction_id))
         response = self.get_request(endpoint)
         logger.info('Response from server: %s' % response)
@@ -169,20 +188,31 @@ class Client(object):
         if errors:
             return None, errors
         else:
-            transaction = Transaction.from_dict(response.json())
+            transaction = PayWayTransaction.from_dict(response.json())
         return transaction, errors
 
     def void_transaction(self, transaction_id):
+        """
+        Void a transaction in PayWay
+        :param transaction_id: str  A PayWay transaction ID
+        """
         endpoint = '%s/%s/void' % (TRANSACTION_URL, transaction_id)
         response = self.post_request(endpoint, data={})
         errors = self._validate_response(response)
         if errors:
             return None, errors
         else:
-            transaction = Transaction.from_dict(response.json())
+            transaction = PayWayTransaction.from_dict(response.json())
         return transaction, errors
 
     def refund_transaction(self, transaction_id, amount, order_id=None, ip_address=None):
+        """
+        Refund a transaction in PayWay
+        :param transaction_id: str  A PayWay transaction ID
+        :param amount:  str  amount to refund
+        :param order_id:  str  optional reference number
+        :param ip_address:  str  optional IP address
+        """
         endpoint = TRANSACTION_URL
         data = {
             'transactionType': 'refund',
@@ -198,12 +228,13 @@ class Client(object):
         if errors:
             return None, errors
         else:
-            transaction = Transaction.from_dict(response)
+            transaction = PayWayTransaction.from_dict(response)
         return transaction, errors
 
     def get_customer(self, customer_id):
         """
         Returns a PayWay Customer's Payment Setup, [Payment] Schedule, Contact Details, Custom Fields and Notes
+        :param customer_id  str PayWay customer ID in PayWay system
         """
         endpoint = '%s/%s' % (CUSTOMER_URL, str(customer_id))
         response = self.get_request(endpoint)
@@ -211,12 +242,14 @@ class Client(object):
         if errors:
             return None, errors
         else:
-            customer = Customer.from_dict(response.json())
+            customer = PayWayCustomer.from_dict(response.json())
         return customer, errors
 
     def update_payment_setup(self, token, customer_id):
         """
         Updates the Customer's Payment Setup with a new Credit Card or Bank Account.
+        :param token: PayWay credit card or bank account token
+        :param customer_id: PayWay customer ID
         """
         endpoint = '%s/%s/payment-setup' % (CUSTOMER_URL, str(customer_id))
         data = {
