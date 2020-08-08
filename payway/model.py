@@ -57,8 +57,8 @@ class PayWayCustomer(object):
 
     def __init__(self, custom_id=None, customer_name=None, email_address=None, send_email_receipts=None,
                  phone_number=None, street=None, street2=None, city_name=None, state=None, postal_code=None,
-                 token=None, customer_number=None, payment_setup=None, notes=None, customer_field_1=None,
-                 customer_field_2=None, customer_field_3=None, customer_field_4=None):
+                 token=None, customer_number=None, payment_setup=None, notes=None, custom_field_1=None,
+                 custom_field_2=None, custom_field_3=None, custom_field_4=None):
         self.custom_id = custom_id
         self.customer_name = customer_name
         self.email_address = email_address
@@ -73,10 +73,10 @@ class PayWayCustomer(object):
         self.customer_number = customer_number
         self.payment_setup = payment_setup
         self.notes = notes
-        self.custom_field_1 = customer_field_1
-        self.custom_field_2 = customer_field_2
-        self.custom_field_3 = customer_field_3
-        self.custom_field_4 = customer_field_4
+        self.customField1 = custom_field_1
+        self.customField2 = custom_field_2
+        self.customField3 = custom_field_3
+        self.customField4 = custom_field_4
 
     def to_dict(self):
         return {
@@ -91,10 +91,10 @@ class PayWayCustomer(object):
             "postalCode": self.postal_code,
             "singleUseTokenId": self.token,
             "notes": self.notes,
-            "customField1": self.custom_field_1,
-            "customField2": self.custom_field_2,
-            "customField3": self.custom_field_3,
-            "customField4": self.custom_field_4,
+            "customField1": self.customField1,
+            "customField2": self.customField2,
+            "customField3": self.customField3,
+            "customField4": self.customField4,
         }
 
     @staticmethod
