@@ -129,11 +129,11 @@ To process a credit card pre-authorisation using a credit card stored against a 
 
 ```
 pre_auth_payment = Payment(customer_number='',
-            			   transaction_type='preAuth',
+                           transaction_type='preAuth',
                            amount='',
-            			   currency='aud',
-			               order_number='',
-            			   ip_address='')
+                           currency='aud',
+                           order_number='',
+                           ip_address='')
 transaction, errors = client.process_payment(pre_auth_payment)
 ```
 
@@ -141,10 +141,10 @@ To capture the pre-authorisation supply a pre-authorisation transaction ID,  `ca
 
 ```
 capture_payment = Payment(transaction_type='capture',
-            			  parent_transaction_id='',
-			              amount='',
-            			  order_number='',
-			              ip_address='')
+                          parent_transaction_id='',
+                          amount='',
+                          order_number='',
+                          ip_address='')
 transaction, errors = client.process_payment(capture_payment)
 ```
 
