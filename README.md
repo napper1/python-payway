@@ -1,6 +1,5 @@
 # `PayWay REST API - Python`
 
-What this library does:
 - Store customers, their card and bank account in PayWay
 - Take payment using a stored credit card or bank account
 - Process and Capture a pre-authorisation
@@ -8,14 +7,6 @@ What this library does:
 - Refund transactions
 - Void transactions
 - Update a customer's payment setup in PayWay
-
-Testing
-1. Sign up for a PayWay sandbox account: https://www.payway.com.au/sandbox
-2. Test the integration by adding your PayWay REST API keys to your local environment. These keys are in Account Settings > `REST API Keys`. Copy your `Publishable` and `Secret` API keys.
-3. `export PAYWAY_PUBLISHABLE_API_KEY="your PayWay Publishable API Key"`
-4. `export PAYWAY_SECRET_API_KEY="your PayWay Secret API Key"`
-5. Run the tests to ensure the integration is working. 
-`python -m unittest tests`
 
 # `Make a transaction`
 
@@ -31,29 +22,29 @@ client = Client(merchant_id='',
                 secret_api_key='')
 ```
                  
-Create a Customer class with your customer's details
+Create a PayWayCustomer class with your customer's details
 
 ```
-customer = Customer(custom_id='c981a',
-                    customer_name='John Smith',
-                    email_address='johnsmith@example.com',
-                    send_email_receipts=False,  # not available in sandbox
-                    phone_number='0343232323',
-                    street='1 Test Street',
-                    street2='2 Test Street',
-                    city_name='Sydney',
-                    state='NSW',
-                    postal_code='2000')
+customer = PayWayCustomer(custom_id='c981a',
+                          customer_name='John Smith',
+                          email_address='johnsmith@example.com',
+                          send_email_receipts=False,  # not available in sandbox
+                          phone_number='0343232323',
+                          street='1 Test Street',
+                          street2='2 Test Street',
+                          city_name='Sydney',
+                          state='NSW',
+                          postal_code='2000')
 ```
         
-Create a Card class with your customer's card details
+Create a PayWayCard class with your customer's card details
 
 ```
-card = Card(card_number='4564710000000004',
-            cvn='847',
-            card_holder_name='Test',
-            expiry_date_month='02',
-            expiry_date_year='29')
+card = PayWayCard(card_number='4564710000000004',
+                  cvn='847',
+                  card_holder_name='Test',
+                  expiry_date_month='02',
+                  expiry_date_year='29')
 ```
 
 Create a token from your card and create a customer in PayWay
@@ -71,12 +62,12 @@ Create a Payment class with the payment details and process the transaction
 
 ```
 customer_number = payway_customer.customer_number
-payment = Payment(customer_number=customer_number,
-                  transaction_type='payment',
-                  amount='10',
-                  currency='aud',
-                  order_number='5100',
-                  ip_address='127.0.0.1')
+payment = PayWayPayment(customer_number=customer_number,
+                        transaction_type='payment',
+                        amount='10',
+                        currency='aud',
+                        order_number='5100',
+                        ip_address='127.0.0.1')
 transaction, errors = client.process_payment(payment)
 ```    
                                  
@@ -128,23 +119,23 @@ transaction, errors = client.get_transaction(transaction.transaction_id)
 To process a credit card pre-authorisation using a credit card stored against a customer use `preAuth` as the `transaction_type` along with the customer's PayWay number, amount and currency.
 
 ```
-pre_auth_payment = Payment(customer_number='',
-                           transaction_type='preAuth',
-                           amount='',
-                           currency='aud',
-                           order_number='',
-                           ip_address='')
+pre_auth_payment = PayWayPayment(customer_number='',
+                                 transaction_type='preAuth',
+                                 amount='',
+                                 currency='aud',
+                                 order_number='',
+                                 ip_address='')
 transaction, errors = client.process_payment(pre_auth_payment)
 ```
 
 To capture the pre-authorisation supply a pre-authorisation transaction ID,  `capture` as the `transaction_type` along with an amount to capture.
 
 ```
-capture_payment = Payment(transaction_type='capture',
-                          parent_transaction_id='',
-                          amount='',
-                          order_number='',
-                          ip_address='')
+capture_payment = PayWayPayment(transaction_type='capture',
+                                parent_transaction_id='',
+                                amount='',
+                                order_number='',
+                                ip_address='')
 transaction, errors = client.process_payment(capture_payment)
 ```
 
@@ -186,3 +177,12 @@ when creating a single use token of a card or bank account so your PCI-complianc
 
 Please follow PayWay's advice about reducing your risk of fraudulent transactions.
 https://www.payway.com.au/docs/card-testing.html#card-testing
+
+# `Testing`
+
+1. Sign up for a PayWay sandbox account: https://www.payway.com.au/sandbox
+2. Test the integration by adding your PayWay REST API keys to your local environment. These keys are in Account Settings > `REST API Keys`. Copy your `Publishable` and `Secret` API keys.
+3. `export PAYWAY_PUBLISHABLE_API_KEY="your PayWay Publishable API Key"`
+4. `export PAYWAY_SECRET_API_KEY="your PayWay Secret API Key"`
+5. Run the tests to ensure the integration is working. 
+`python -m unittest tests`
