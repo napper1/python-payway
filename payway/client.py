@@ -4,13 +4,15 @@ import requests
 from payway.conf import TOKEN_NO_REDIRECT, CUSTOMER_URL, TRANSACTION_URL
 from payway.constants import CREDIT_CARD_PAYMENT_CHOICE, BANK_ACCOUNT_PAYMENT_CHOICE, PAYMENT_METHOD_CHOICES, \
     VALID_PAYMENT_METHOD_CHOICES
+from payway.customers import CustomerRequest
 from payway.exceptions import PaywayError
 from payway.model import PayWayCustomer, PayWayTransaction, PaymentError, ServerError, PaymentSetup, TokenResponse
+from payway.transactions import TransactionRequest
 
 logger = getLogger(__name__)
 
 
-class Client(object):
+class Client(CustomerRequest, TransactionRequest):
     """
     PayWay Client to connect to PayWay and perform methods given credentials
     """
@@ -32,6 +34,15 @@ class Client(object):
         self.bank_account_id = bank_account_id
         self.secret_api_key = secret_api_key
         self.publishable_api_key = publishable_api_key
+
+        session = requests.Session()
+        session.auth = (self.secret_api_key, '')
+        headers = {'content-type': 'application/x-www-form-urlencoded'}
+        session.headers = headers
+        self.session = session
+        session_no_headers = requests.Session()
+        session_no_headers.auth = session.auth
+        self.session_no_headers = session_no_headers
 
     def _validate_credentials(self, merchant_id, bank_account_id, secret_api_key, publishable_api_key):
         if not merchant_id or not bank_account_id or not secret_api_key or not publishable_api_key:
