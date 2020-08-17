@@ -9,7 +9,7 @@ requirements = [
 
 setuptools.setup(
     name="python-payway", # Replace with your own username
-    version="0.0.1",
+    version="0.0.2",
     author="Ben Napper",
     author_email="reppan197@gmail.com",
     description="Python client for working with Westpac's PayWay REST API",
