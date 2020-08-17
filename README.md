@@ -8,13 +8,13 @@
 - Void transactions
 - Update a customer's payment setup in PayWay
 
-# `Installation`
+# `Install`
 
 ```
 pip install python-payway
 ```
 
-# `Make a transaction`
+# `Take payment using a stored credit card`
 
 Create a Client class with your PayWay API credentials
 
@@ -46,11 +46,11 @@ customer = PayWayCustomer(custom_id='c981a',
 Create a PayWayCard class with your customer's card details
 
 ```
-card = PayWayCard(card_number='4564710000000004',
-                  cvn='847',
-                  card_holder_name='Test',
-                  expiry_date_month='02',
-                  expiry_date_year='29')
+card = PayWayCard(card_number='',
+                  cvn='',
+                  card_holder_name='',
+                  expiry_date_month='',
+                  expiry_date_year='')
 ```
 
 Create a token from your card and create a customer in PayWay
@@ -70,10 +70,10 @@ Create a Payment class with the payment details and process the transaction
 customer_number = payway_customer.customer_number
 payment = PayWayPayment(customer_number=customer_number,
                         transaction_type='payment',
-                        amount='10',
+                        amount='',
                         currency='aud',
-                        order_number='5100',
-                        ip_address='127.0.0.1')
+                        order_number='',
+                        ip_address='')
 transaction, errors = client.process_payment(payment)
 ```    
                                  
@@ -82,6 +82,32 @@ Check the `transaction` for the result
 ```
 if not errors and transaction.status == 'approved':
     # process successful response
+```
+
+# `Take payment using a credit card token only`
+
+```
+client = Client(merchant_id='',
+                bank_account_id='',
+                publishable_api_key='',
+                secret_api_key='')
+card = PayWayCard(card_number='',
+                  cvn='',
+                  card_holder_name='',
+                  expiry_date_month='',
+                  expiry_date_year='')
+token_response, errors = client.create_card_token(card)
+# your customer reference number or a stored PayWay customer number
+customer_number = ''    
+payment = PayWayPayment(customer_number=customer_number,
+                        transaction_type='payment',
+                        amount='',
+                        currency='aud',
+                        order_number='',
+                        ip_address='',
+                        token=token_response.token,
+                        merchant_id=client.merchant_id)
+transaction, errors = client.process_payment(payment)
 ```
 
 # `Handling errors`

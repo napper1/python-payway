@@ -210,3 +210,17 @@ class TestCustomerRequest(unittest.TestCase):
         self.assertEqual(address['cityName'], new_city)
         self.assertEqual(address['state'], new_state)
         self.assertEqual(address['postalCode'], new_postcode)
+
+    def test_list_customers(self):
+        # create a customer if none already and list all customers
+        card = self.card
+        token_response, errors = self.client.create_card_token(card)
+        customer = self.customer
+        customer.token = token_response.token
+        payway_customer, customer_errors = self.client.create_customer(customer)
+        payway_customer_number = payway_customer.customer_number
+        self.assertIsNotNone(payway_customer_number)
+        response = self.client.list_customers()
+        self.assertEqual(response.__class__, dict)
+        self.assertIsNotNone(response)
+        self.assertIsNotNone(response.get('data'))

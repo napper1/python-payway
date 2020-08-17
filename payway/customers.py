@@ -72,3 +72,12 @@ class CustomerRequest(object):
             data.update(customer.to_dict())
         data.update(options)
         return self.session.put("%s/%s/contact" % (CUSTOMER_URL, customer_number), data=data)
+
+    @json_list('list_customers')
+    def list_customers(self):
+        """
+        List all customers in PayWay
+        Returns paginated list of customerNumber, customerName
+        """
+        # TODO: add page numbers
+        return self.session_no_headers.get("%s" % CUSTOMER_URL)

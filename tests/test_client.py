@@ -130,6 +130,28 @@ class TestClient(unittest.TestCase):
         self.assertIsNotNone(payway_customer_number)
 
     def test_process_payment(self):
+        # Take payment (using a credit card token)
+        card = self.card
+        token_response, errors = self.client.create_card_token(card)
+        # Customer doesn't have to be stored in PayWay so can use any customer number
+        # Otherwise use a PayWay customer number if already stored in PayWay
+        customer_number = '123456789'
+        payment = copy.deepcopy(self.payment)
+        payment.customer_number = customer_number
+        payment.token = token_response.token
+        payment.order_number = '5200'
+        payment.merchant_id = self.client.merchant_id
+        transaction, errors = self.client.process_payment(payment)
+
+        self.assertIsInstance(transaction, PayWayTransaction)
+        self.assertIsNone(errors)
+        self.assertIsNotNone(transaction.transaction_id)
+        self.assertIsNotNone(transaction.receipt_number)
+        self.assertEqual(transaction.status, "approved")
+        self.assertEqual(transaction.response_code, "08")
+
+    def test_process_payment_stored_card(self):
+        # Take payment (using a stored card in PayWay)
         card = self.card
         token_response, errors = self.client.create_card_token(card)
         customer = self.customer
@@ -369,5 +391,3 @@ class TestClient(unittest.TestCase):
 
         self.assertIsNotNone(capture_transaction)
         self.assertIsNotNone(capture_transaction.transaction_id)
-
-
