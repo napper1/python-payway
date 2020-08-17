@@ -9,6 +9,9 @@ def json_list(name):
                 return result.json()
             if result.status_code not in [200, 204]:
                 raise PaywayError(result.status_code, result.text)
+            if result.status_code == 204:
+                # DELETE methods successful response
+                return result
             return result.json()
         return wrapper
     return decorator

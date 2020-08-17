@@ -79,7 +79,7 @@ class PayWayCustomer(object):
         self.customField4 = custom_field_4
 
     def to_dict(self):
-        return {
+        customer = {
             "customerName": self.customer_name,
             "emailAddress": self.email_address,
             "sendEmailReceipts": 'true' if self.send_email_receipts else 'false',
@@ -89,13 +89,15 @@ class PayWayCustomer(object):
             "cityName": self.city_name,
             "state": self.state,
             "postalCode": self.postal_code,
-            "singleUseTokenId": self.token,
             "notes": self.notes,
             "customField1": self.customField1,
             "customField2": self.customField2,
             "customField3": self.customField3,
             "customField4": self.customField4,
         }
+        if self.token:
+            customer.update({"singleUseTokenId": self.token})
+        return customer
 
     @staticmethod
     def from_dict(response):

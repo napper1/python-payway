@@ -43,10 +43,20 @@ class CustomerRequest(object):
     @json_list('stop_all_payments')
     def stop_all_payments(self, customer_number):
         """
-        Stop all payments for a customer
+        Stops any new payments using the stored credit card or bank account/
         """
         data = {
             'stopped': 'true'
+        }
+        return self.session_no_headers.patch("%s/%s/payment-setup" % (CUSTOMER_URL, customer_number), data=data)
+
+    @json_list('start_all_payments')
+    def start_all_payments(self, customer_number):
+        """
+        Allows any new payments using the stored credit card or bank account.
+        """
+        data = {
+            'stopped': 'false'
         }
         return self.session_no_headers.patch("%s/%s/payment-setup" % (CUSTOMER_URL, customer_number), data=data)
 
