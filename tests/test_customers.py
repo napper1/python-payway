@@ -127,7 +127,9 @@ class TestCustomerRequest(unittest.TestCase):
     def test_delete_customer(self):
         card = self.card
         token_response, errors = self.client.create_card_token(card)
-        customer = self.customer
+        customer = copy.deepcopy(self.customer)
+        # testing with a brand new customer - customers with existing payments in the past 365 days cannot be deleted
+        customer.custom_id = ''
         customer.token = token_response.token
         payway_customer, customer_errors = self.client.create_customer(customer)
         payway_customer_number = payway_customer.customer_number
