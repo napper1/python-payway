@@ -1,6 +1,7 @@
 import copy
 import os
 import unittest
+import uuid
 
 try:
     import payway
@@ -391,3 +392,28 @@ class TestClient(unittest.TestCase):
 
         self.assertIsNotNone(capture_transaction)
         self.assertIsNotNone(capture_transaction.transaction_id)
+
+    def test_process_payment_with_idempotency_key(self):
+        """
+        Send a payment using a unique idempotency key to try and avoid duplicate POSTs
+        https://www.payway.com.au/docs/rest.html#avoiding-duplicate-posts
+        """
+        card = self.card
+        token_response, errors = self.client.create_card_token(card)
+        # Customer doesn't have to be stored in PayWay so can use any customer number
+        # Otherwise use a PayWay customer number if already stored in PayWay
+        customer_number = '123456789'
+        payment = copy.deepcopy(self.payment)
+        payment.customer_number = customer_number
+        payment.token = token_response.token
+        payment.order_number = '5200'
+        payment.merchant_id = self.client.merchant_id
+        idempotency_key = str(uuid.uuid4())
+        transaction, errors = self.client.process_payment(payment, idempotency_key=idempotency_key)
+
+        self.assertIsInstance(transaction, PayWayTransaction)
+        self.assertIsNone(errors)
+        self.assertIsNotNone(transaction.transaction_id)
+        self.assertIsNotNone(transaction.receipt_number)
+        self.assertEqual(transaction.status, "approved")
+        self.assertEqual(transaction.response_code, "08")

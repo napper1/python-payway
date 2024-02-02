@@ -1,6 +1,6 @@
 import copy
-import os
 import unittest
+import datetime
 
 try:
     import payway
@@ -19,7 +19,10 @@ class TestCustomerRequest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # You will need to create a sandbox PayWay account and add your sandbox API keys into your environment
+        """
+        You will need to create a sandbox PayWay account and add your sandbox API keys into your environment
+        """
+
         merchant_id = 'TEST'
         bank_account_id = '0000000A'
         publishable_api_key = PUBLISHABLE_API_KEY
@@ -150,10 +153,19 @@ class TestCustomerRequest(unittest.TestCase):
         payway_customer, customer_errors = self.client.create_customer(customer)
         payway_customer_number = payway_customer.customer_number
         self.assertIsNotNone(payway_customer_number)
-        response = self.client.schedule_payments(payway_customer_number, 'weekly', '01 Sep 2020', 10.50)
+        next_week = datetime.datetime.now() + datetime.timedelta(weeks=1)
+        next_payment_date = next_week.strftime('%d %b %Y')
+
+        response = self.client.schedule_payments(
+            customer_number=payway_customer_number,
+            frequency='weekly',
+            next_payment_date=next_payment_date,
+            regular_amount=10.50
+        )
+
         self.assertEqual(response.__class__, dict)
         self.assertEqual(response['frequency'], 'weekly')
-        self.assertEqual(response['nextPaymentDate'], '01 Sep 2020')
+        self.assertEqual(response['nextPaymentDate'], next_payment_date)
         self.assertEqual(response['nextPrincipalAmount'], 10.50)
         self.assertEqual(response['regularPrincipalAmount'], 10.50)
         self.assertEqual(response['regularPaymentAmount'], 10.50)
@@ -166,7 +178,16 @@ class TestCustomerRequest(unittest.TestCase):
         payway_customer, customer_errors = self.client.create_customer(customer)
         payway_customer_number = payway_customer.customer_number
         self.assertIsNotNone(payway_customer_number)
-        response = self.client.schedule_payments(payway_customer_number, 'weekly', '01 Sep 2020', 10.50)
+        next_week = datetime.datetime.now() + datetime.timedelta(weeks=1)
+        next_payment_date = next_week.strftime('%d %b %Y')
+
+        response = self.client.schedule_payments(
+            customer_number=payway_customer_number,
+            frequency='weekly',
+            next_payment_date=next_payment_date,
+            regular_amount=10.50
+        )
+
         self.assertEqual(response.__class__, dict)
         self.assertEqual(response['frequency'], 'weekly')
         # stop schedule

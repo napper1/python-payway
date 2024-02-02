@@ -1,3 +1,5 @@
+import json
+import uuid
 from logging import getLogger
 import requests
 
@@ -56,21 +58,28 @@ class Client(CustomerRequest, TransactionRequest):
     def get_request(self, endpoint):
         return requests.get(url=endpoint, auth=(self.secret_api_key, ''))
 
-    def post_request(self, endpoint, data, auth=None):
+    def post_request(self, endpoint, data, auth=None, idempotency_key=None):
+        """
+        Supply an idempotency_key to avoid duplicate POSTs
+        https://www.payway.com.au/docs/rest.html#avoiding-duplicate-posts
+        """
         if not auth:
             auth = (self.secret_api_key, '')
         headers = {'content-type': 'application/x-www-form-urlencoded'}
+        if idempotency_key:
+            headers["Idempotency-Key"] = idempotency_key
         return requests.post(url=endpoint, auth=auth, data=data, headers=headers)
 
     def put_request(self, endpoint, data):
         headers = {'content-type': 'application/x-www-form-urlencoded'}
         return requests.put(url=endpoint, auth=(self.secret_api_key, ''), data=data, headers=headers)
 
-    def create_token(self, payway_obj, payment_method):
+    def create_token(self, payway_obj, payment_method, idempotency_key=None):
         """
         Creates a single use token for a Customer's payment setup (credit card or bank account)
         :param payway_obj:   object: one of model.PayWayCard or model.BankAccount object
         :param payment_method:   str: one of `card` or `direct_debit`
+        :param idempotency_key:   str: unique value to avoid duplicate POSTs
         """
         data = payway_obj.to_dict()
         if payment_method == 'card':
@@ -86,7 +95,12 @@ class Client(CustomerRequest, TransactionRequest):
         })
         endpoint = TOKEN_NO_REDIRECT
         logger.info('Sending Create Token request to PayWay.')
-        response = self.post_request(endpoint, data, auth=(self.publishable_api_key, ''))
+        response = self.post_request(
+            endpoint,
+            data,
+            auth=(self.publishable_api_key, ''),
+            idempotency_key=idempotency_key
+        )
         logger.info('Response from server: %s' % response)
         errors = self._validate_response(response)
         if errors:
@@ -95,21 +109,23 @@ class Client(CustomerRequest, TransactionRequest):
             token_response = TokenResponse().from_dict(response.json())
             return token_response, errors
 
-    def create_card_token(self, card):
+    def create_card_token(self, card, idempotency_key=None):
         """
         :param card:    PayWayCard object represents a customer's credit card details
+        :param idempotency_key:   str: unique value to avoid duplicate POSTs
         See model.PayWayCard
         """
-        return self.create_token(card, 'card')
+        return self.create_token(card, 'card', idempotency_key=idempotency_key)
 
-    def create_bank_account_token(self, bank_account):
+    def create_bank_account_token(self, bank_account, idempotency_key=None):
         """
         :param bank_account:    BankAccount object represents a customer's bank account
+        :param idempotency_key:   str: unique value to avoid duplicate POSTs
         See model.BankAccount
         """
-        return self.create_token(bank_account, 'direct_debit')
+        return self.create_token(bank_account, 'direct_debit', idempotency_key=idempotency_key)
 
-    def create_customer(self, customer):
+    def create_customer(self, customer, idempotency_key=None):
         """
         Create a customer in PayWay system
 
@@ -117,6 +133,7 @@ class Client(CustomerRequest, TransactionRequest):
         PUT /customers/{customerNumber} to use your own customer number
 
         :param customer:    PayWayCustomer object represents a customer in PayWay
+        :param idempotency_key:   str: unique value to avoid duplicate POSTs
         See model.PayWayCustomer
         :return:
         """
@@ -134,7 +151,7 @@ class Client(CustomerRequest, TransactionRequest):
             response = self.put_request(endpoint, data)
         else:
             endpoint = '{}'.format(CUSTOMER_URL)
-            response = self.post_request(endpoint, data)
+            response = self.post_request(endpoint, data, idempotency_key=idempotency_key)
 
         logger.info('Response from server: %s' % response)
         errors = self._validate_response(response)
@@ -144,15 +161,16 @@ class Client(CustomerRequest, TransactionRequest):
             customer = PayWayCustomer().from_dict(response.json())
             return customer, errors
 
-    def process_payment(self, payment):
+    def process_payment(self, payment, idempotency_key=None):
         """
         Process an individual payment against a Customer with active Recurring Billing setup.
         :param payment: PayWayPayment object (see model.PayWayPayment)
+        :param idempotency_key:   str: unique value to avoid duplicate POSTs
         """
         data = payment.to_dict()
         endpoint = TRANSACTION_URL
         logger.info('Sending Process Payment request to PayWay.')
-        response = self.post_request(endpoint, data)
+        response = self.post_request(endpoint, data, idempotency_key=idempotency_key)
         logger.info('Response from server: %s' % response)
         errors = self._validate_response(response)
         if errors:
@@ -178,8 +196,12 @@ class Client(CustomerRequest, TransactionRequest):
             # instead of raising an exception, return the specific PayWay errors as a list
             return payway_errors
 
-        elif response.status_code == 500:  # Documented PayWay server errors in JSON
-            errors = response.json()
+        elif response.status_code == 500:
+            try:
+                errors = response.json()
+            except json.JSONDecodeError:
+                raise PaywayError(code=response.status_code, message="Internal server error")
+            # Documented PayWay server errors in JSON
             payway_error = ServerError().from_dict(errors)
             message = payway_error.to_message()
             raise PaywayError(code=response.status_code, message=message)
@@ -202,13 +224,14 @@ class Client(CustomerRequest, TransactionRequest):
             transaction = PayWayTransaction.from_dict(response.json())
         return transaction, errors
 
-    def void_transaction(self, transaction_id):
+    def void_transaction(self, transaction_id, idempotency_key=None):
         """
         Void a transaction in PayWay
         :param transaction_id: str  A PayWay transaction ID
+        :param idempotency_key:   str: unique value to avoid duplicate POSTs
         """
         endpoint = '%s/%s/void' % (TRANSACTION_URL, transaction_id)
-        response = self.post_request(endpoint, data={})
+        response = self.post_request(endpoint, data={}, idempotency_key=idempotency_key)
         errors = self._validate_response(response)
         if errors:
             return None, errors
@@ -216,13 +239,14 @@ class Client(CustomerRequest, TransactionRequest):
             transaction = PayWayTransaction.from_dict(response.json())
         return transaction, errors
 
-    def refund_transaction(self, transaction_id, amount, order_id=None, ip_address=None):
+    def refund_transaction(self, transaction_id, amount, order_id=None, ip_address=None, idempotency_key=None):
         """
         Refund a transaction in PayWay
         :param transaction_id: str  A PayWay transaction ID
         :param amount:  str  amount to refund
         :param order_id:  str  optional reference number
         :param ip_address:  str  optional IP address
+        :param idempotency_key:   str: unique value to avoid duplicate POSTs
         """
         endpoint = TRANSACTION_URL
         data = {
@@ -234,7 +258,7 @@ class Client(CustomerRequest, TransactionRequest):
             data['orderNumber'] = order_id
         if ip_address:
             data['customerIpAddress'] = ip_address
-        response = self.post_request(endpoint, data)
+        response = self.post_request(endpoint, data, idempotency_key=idempotency_key)
         errors = self._validate_response(response)
         if errors:
             return None, errors

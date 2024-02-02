@@ -1,4 +1,4 @@
-# `PayWay REST API - Python`
+# PayWay REST API - Python
 
 - Store customers, their card and bank account in PayWay
 - Take payment using a stored credit card or bank account
@@ -8,13 +8,13 @@
 - Void transactions
 - Update a customer's payment setup in PayWay
 
-# `Install`
+# Install
 
 ```
 pip install python-payway
 ```
 
-# `Take payment using a stored credit card`
+# Take payment using a stored credit card
 
 Create a Client class with your PayWay API credentials
 
@@ -84,7 +84,7 @@ if not errors and transaction.status == 'approved':
     # process successful response
 ```
 
-# `Take payment using a credit card token only`
+# Take payment using a credit card token only
 
 ```
 client = Client(merchant_id='',
@@ -110,7 +110,7 @@ payment = PayWayPayment(customer_number=customer_number,
 transaction, errors = client.process_payment(payment)
 ```
 
-# `Handling errors`
+# Handling errors
 
 Documented errors (such as 422 Unprocessable entity) are parsed into an PaymentError class that you can use in an customer error message.
 https://www.payway.com.au/docs/rest.html#http-response-codes
@@ -125,7 +125,7 @@ if errors:
     PaymentError().list_to_message(errors) 
 ```     
 
-# `Direct Debit`
+# Direct Debit
 Direct debit transactions are possible by creating a token from a bank account:
 
 ```
@@ -138,7 +138,7 @@ Store the token with a customer in PayWay using the same process as the card out
 
 Note: direct debit transactions take days to process so they must be polled regularly for the latest transaction status from the customer's bank.
 
-# `Lookup transaction`
+# Lookup transaction
 
 Poll a transaction using the `get_transaction` method.
 
@@ -146,7 +146,7 @@ Poll a transaction using the `get_transaction` method.
 transaction, errors = client.get_transaction(transaction.transaction_id)
 ``` 
 
-# `Process and capture a pre-authorisation`
+# Process and capture a pre-authorisation
 
 To process a credit card pre-authorisation using a credit card stored against a customer use `preAuth` as the `transaction_type` along with the customer's PayWay number, amount and currency.
 
@@ -171,7 +171,7 @@ capture_payment = PayWayPayment(transaction_type='capture',
 transaction, errors = client.process_payment(capture_payment)
 ```
 
-# `Refunds`
+# Refunds
 
 Refund a transaction by supplying a PayWay transaction ID and the refund amount.
 
@@ -182,7 +182,7 @@ refund, errors = client.refund_transaction(
 )
 ```
 
-# `Voiding a transaction`
+# Voiding a transaction
 
 Void a transaction by supplying a PayWay transaction ID.
 
@@ -190,7 +190,7 @@ Void a transaction by supplying a PayWay transaction ID.
 void_transaction, errors = client.void_transaction(transaction.transaction_id)
 ```
 
-# `Update Payment Setup`
+# Update Payment Setup
 
 Update a customer's payment setup with a new credit card or bank account in PayWay. Supply the new token and an existing PayWay customer number.
 
@@ -198,19 +198,19 @@ Update a customer's payment setup with a new credit card or bank account in PayW
 payment_setup, errors = client.update_payment_setup(new_token, payway_customer.customer_number)
 ```
 
-# `Additional notes`                             
+# Additional notes                             
 PayWay API documentation
 https://www.payway.com.au/docs/rest.html
 
 It is recommended to use PayWay's Trusted Frame https://www.payway.com.au/docs/rest.html#trusted-frame
 when creating a single use token of a card or bank account so your PCI-compliance scope is reduced.  
 
-# `Fraud`
+# Fraud
 
 Please follow PayWay's advice about reducing your risk of fraudulent transactions.
 https://www.payway.com.au/docs/card-testing.html#card-testing
 
-# `Testing`
+# Testing
 
 1. Sign up for a PayWay sandbox account: https://www.payway.com.au/sandbox
 2. Test the integration by adding your PayWay REST API keys to your local environment. These keys are in Account Settings > `REST API Keys`. Copy your `Publishable` and `Secret` API keys.
