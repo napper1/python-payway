@@ -1,5 +1,3 @@
-
-
 class BankAccount(object):
     """
     account_name: str: 	Name used to open bank account.
@@ -14,16 +12,21 @@ class BankAccount(object):
 
     def to_dict(self):
         return {
-            'accountName': self.account_name,
-            'bsb': self.bsb,
-            'accountNumber': self.account_number
+            "accountName": self.account_name,
+            "bsb": self.bsb,
+            "accountNumber": self.account_number,
         }
 
 
 class PayWayCard(object):
-
-    def __init__(self, card_number=None, cvn=None, card_holder_name=None, expiry_date_month=None,
-                 expiry_date_year=None):
+    def __init__(
+        self,
+        card_number=None,
+        cvn=None,
+        card_holder_name=None,
+        expiry_date_month=None,
+        expiry_date_year=None,
+    ):
         self.card_number = card_number
         self.cvn = cvn
         self.card_holder_name = card_holder_name
@@ -32,11 +35,11 @@ class PayWayCard(object):
 
     def to_dict(self):
         return {
-            'cardNumber': self.card_number,
-            'cvn': self.cvn,
-            'cardholderName': self.card_holder_name,
-            'expiryDateMonth': self.expiry_date_month,
-            'expiryDateYear': self.expiry_date_year  # Should be YY
+            "cardNumber": self.card_number,
+            "cvn": self.cvn,
+            "cardholderName": self.card_holder_name,
+            "expiryDateMonth": self.expiry_date_month,
+            "expiryDateYear": self.expiry_date_year,  # Should be YY
         }
 
     @staticmethod
@@ -54,11 +57,27 @@ class PayWayCard(object):
 
 
 class PayWayCustomer(object):
-
-    def __init__(self, custom_id=None, customer_name=None, email_address=None, send_email_receipts=None,
-                 phone_number=None, street=None, street2=None, city_name=None, state=None, postal_code=None,
-                 token=None, customer_number=None, payment_setup=None, notes=None, custom_field_1=None,
-                 custom_field_2=None, custom_field_3=None, custom_field_4=None):
+    def __init__(
+        self,
+        custom_id=None,
+        customer_name=None,
+        email_address=None,
+        send_email_receipts=None,
+        phone_number=None,
+        street=None,
+        street2=None,
+        city_name=None,
+        state=None,
+        postal_code=None,
+        token=None,
+        customer_number=None,
+        payment_setup=None,
+        notes=None,
+        custom_field_1=None,
+        custom_field_2=None,
+        custom_field_3=None,
+        custom_field_4=None,
+    ):
         self.custom_id = custom_id
         self.customer_name = customer_name
         self.email_address = email_address
@@ -82,7 +101,7 @@ class PayWayCustomer(object):
         customer = {
             "customerName": self.customer_name,
             "emailAddress": self.email_address,
-            "sendEmailReceipts": 'true' if self.send_email_receipts else 'false',
+            "sendEmailReceipts": "true" if self.send_email_receipts else "false",
             "phoneNumber": self.phone_number,
             "street1": self.street,
             "street2": self.street2,
@@ -121,7 +140,9 @@ class PayWayCustomer(object):
         customer.customer_number = response.get("customerNumber")
 
         if response.get("paymentSetup") is not None:
-            customer.payment_setup = PaymentSetup().from_dict(response.get("paymentSetup"))
+            customer.payment_setup = PaymentSetup().from_dict(
+                response.get("paymentSetup")
+            )
 
         if response.get("customFields") is not None:
             custom_fields = response.get("customFields")
@@ -129,7 +150,7 @@ class PayWayCustomer(object):
                 setattr(customer, k, v)
 
         if response.get("notes") is not None:
-            customer.notes = response['notes']
+            customer.notes = response["notes"]
 
         return customer
 
@@ -157,7 +178,9 @@ class PaymentError(object):
 
     def to_message(self):
         return "Field: {} Message: {} Field Value: {}".format(
-            self.field_name, self.message, self.field_value,
+            self.field_name,
+            self.message,
+            self.field_value,
         )
 
     @staticmethod
@@ -171,7 +194,7 @@ class PaymentError(object):
         for error in payway_errors:
             message += error.to_message()
             if len(payway_errors) > 1:
-                message += ' | '
+                message += " | "
         return message
 
 
@@ -190,7 +213,9 @@ class ServerError(object):
         return payway_error
 
     def to_message(self):
-        return "Error number: {} Trace code: {}".format(self.error_number, self.trace_code)
+        return "Error number: {} Trace code: {}".format(
+            self.error_number, self.trace_code
+        )
 
 
 class PayWayPayment(object):
@@ -206,8 +231,18 @@ class PayWayPayment(object):
     merchant_id: 	This merchant will be used for processing.
     """
 
-    def __init__(self, transaction_type, customer_number=None, amount=None, currency=None, order_number=None,
-                 ip_address=None, parent_transaction_id=None, token=None, merchant_id=None):
+    def __init__(
+        self,
+        transaction_type,
+        customer_number=None,
+        amount=None,
+        currency=None,
+        order_number=None,
+        ip_address=None,
+        parent_transaction_id=None,
+        token=None,
+        merchant_id=None,
+    ):
         self.transaction_type = transaction_type
         self.customer_number = customer_number
         self.amount = amount
@@ -228,12 +263,12 @@ class PayWayPayment(object):
             "customerIpAddress": self.ip_address,
         }
         if self.parent_transaction_id:
-            payment['parentTransactionId'] = self.parent_transaction_id
+            payment["parentTransactionId"] = self.parent_transaction_id
         # fields for pre-authorisation
         if self.token:
-            payment['singleUseTokenId'] = self.token
+            payment["singleUseTokenId"] = self.token
         if self.merchant_id:
-            payment['merchantId'] = self.merchant_id
+            payment["merchantId"] = self.merchant_id
         return payment
 
 
@@ -319,7 +354,7 @@ class PayWayTransaction(object):
         :param: response: dict PayWay response dictionary
         """
         transaction = PayWayTransaction()
-        transaction.transaction_id = response.get('transactionId')
+        transaction.transaction_id = response.get("transactionId")
         transaction.receipt_number = response.get("receiptNumber")
         transaction.status = response.get("status")
         transaction.response_code = response.get("responseCode")
@@ -371,6 +406,7 @@ class Merchant(object):
     surchargeAccountNumber 	If surcharges are settled separately, the account number for your surcharge settlement
                             account
     """
+
     merchant_id = None
     merchant_name = None
     settlement_bsb = None
@@ -380,12 +416,12 @@ class Merchant(object):
 
     def to_dict(self):
         return {
-            'merchantId': self.merchant_id,
-            'merchantName': self.merchant_name,
-            'settlementBsb': self.settlement_bsb,
-            'settlementAccountNumber': self.settlement_account_number,
-            'surchargeBsb': self.surcharge_bsb,
-            'surchargeAccountNumber': self.surcharge_account_number,
+            "merchantId": self.merchant_id,
+            "merchantName": self.merchant_name,
+            "settlementBsb": self.settlement_bsb,
+            "settlementAccountNumber": self.settlement_account_number,
+            "surchargeBsb": self.surcharge_bsb,
+            "surchargeAccountNumber": self.surcharge_account_number,
         }
 
     @staticmethod
@@ -395,11 +431,11 @@ class Merchant(object):
         """
         merchant = Merchant()
         merchant.merchant_id = payway_obj.get("merchantId")
-        merchant.merchant_name = payway_obj.get('merchantName')
-        merchant.settlement_bsb = payway_obj.get('settlementBsb')
-        merchant.settlement_account_number = payway_obj.get('settlementAccountNumber')
-        merchant.surcharge_bsb = payway_obj.get('surchargeBsb')
-        merchant.surcharge_account_number = payway_obj.get('surchargeAccountNumber')
+        merchant.merchant_name = payway_obj.get("merchantName")
+        merchant.settlement_bsb = payway_obj.get("settlementBsb")
+        merchant.settlement_account_number = payway_obj.get("settlementAccountNumber")
+        merchant.surcharge_bsb = payway_obj.get("surchargeBsb")
+        merchant.surcharge_account_number = payway_obj.get("surchargeAccountNumber")
         return merchant
 
 

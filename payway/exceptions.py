@@ -1,5 +1,3 @@
-
-
 class PaywayError(Exception):
     _code = None
     _message = None
@@ -13,7 +11,7 @@ class PaywayError(Exception):
         super(PaywayError, self).__init__(*args, **kwargs)
 
         self._code = code
-        self._message = '{}: {}'.format(code, message).encode('utf-8')
+        self._message = "{}: {}".format(code, message).encode("utf-8")
 
     def __bytes__(self):
         return self._message
@@ -22,10 +20,10 @@ class PaywayError(Exception):
         try:
             return unicode(self.__bytes__())
         except NameError:
-            return str(self.__bytes__(), 'utf-8')
+            return str(self.__bytes__(), "utf-8")
 
     def __str__(self):
-        return self.__bytes__().decode('utf-8')
+        return self.__bytes__().decode("utf-8")
 
     def __repr__(self):
         return self.__unicode__()

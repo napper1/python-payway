@@ -13,5 +13,7 @@ def json_list(name):
                 # DELETE methods successful response
                 return result
             return result.json()
+
         return wrapper
+
     return decorator
