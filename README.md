@@ -19,15 +19,14 @@ pip install python-payway
 Create a Client class with your PayWay API credentials
 
 ```python
-from payway.model import *
-from payway.client import *
+from payway.client import Client
 
-client = Client(merchant_id='',
-                bank_account_id='',
-                publishable_api_key='',
-                secret_api_key='')
+client = Client(merchant_id='<your_payway_merchant_id>',
+                bank_account_id='<your_payway_bank_account_id>',
+                publishable_api_key='<your_payway_publishable_api_key>',
+                secret_api_key='<your_payway_secret_api_key>')
 ```
-                 
+
 Create a PayWayCustomer class with your customer's details
 
 ```python
@@ -212,9 +211,4 @@ https://www.payway.com.au/docs/card-testing.html#card-testing
 
 # Testing
 
-1. Sign up for a PayWay sandbox account: https://www.payway.com.au/sandbox
-2. Test the integration by adding your PayWay REST API keys to your local environment. These keys are in Account Settings > `REST API Keys`. Copy your `Publishable` and `Secret` API keys.
-3. `export PAYWAY_PUBLISHABLE_API_KEY="your PayWay Publishable API Key"`
-4. `export PAYWAY_SECRET_API_KEY="your PayWay Secret API Key"`
-5. Run the tests to ensure the integration is working. 
-`python -m unittest discover tests`
+1. Run the tests using `python -m unittest discover tests`
