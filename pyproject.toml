@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "python-payway"
-version = "0.0.4"
+version = "0.0.5"
 description = "Python client for working with Westpac's PayWay REST API"
 authors = [
     { name = "Ben Napper", email = "reppan197@gmail.com" }
