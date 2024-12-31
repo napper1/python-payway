@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime
 import unittest
-from typing import NoReturn
 from unittest.mock import patch
 
 from payway.client import Client
@@ -12,7 +11,7 @@ from payway.test_utils import load_json_file
 
 class TestCustomerRequest(unittest.TestCase):
     @classmethod
-    def setUpClass(cls) -> NoReturn:
+    def setUpClass(cls) -> None:
         """
         You will need to create a sandbox PayWay account and add your sandbox API keys into your environment
         """
@@ -102,7 +101,7 @@ class TestCustomerRequest(unittest.TestCase):
         )
 
     @patch("requests.Session.patch")
-    def test_stop_all_payments(self, mock_post) -> NoReturn:
+    def test_stop_all_payments(self, mock_post) -> None:
         # stop payments for customer
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = {
@@ -113,7 +112,7 @@ class TestCustomerRequest(unittest.TestCase):
         self.assertEqual(stopped, True)
 
     @patch("requests.Session.patch")
-    def test_start_all_payments(self, mock_post) -> NoReturn:
+    def test_start_all_payments(self, mock_post) -> None:
         # start payments for customer
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = {
@@ -124,14 +123,14 @@ class TestCustomerRequest(unittest.TestCase):
         self.assertEqual(stopped, False)
 
     @patch("requests.Session.delete")
-    def test_delete_customer(self, mock_post) -> NoReturn:
+    def test_delete_customer(self, mock_post) -> None:
         mock_post.return_value.status_code = 204
         # delete customer record in PayWay
         response = self.client.delete_customer("1")
         self.assertEqual(response.status_code, 204)
 
     @patch("requests.Session.put")
-    def test_schedule_payments(self, mock_post) -> NoReturn:
+    def test_schedule_payments(self, mock_post) -> None:
         next_week = datetime.datetime.now() + datetime.timedelta(weeks=1)
         next_payment_date = next_week.strftime("%d %b %Y")
         mock_post.return_value.status_code = 200
@@ -156,14 +155,14 @@ class TestCustomerRequest(unittest.TestCase):
         self.assertEqual(response["regularPaymentAmount"], 10.50)
 
     @patch("requests.Session.delete")
-    def test_stop_schedule(self, mock_post) -> NoReturn:
+    def test_stop_schedule(self, mock_post) -> None:
         # stop schedule
         mock_post.return_value.status_code = 204
         response = self.client.stop_schedule("1")
         self.assertEqual(response.status_code, 204)
 
     @patch("requests.Session.put")
-    def test_update_contact_details(self, mock_post) -> NoReturn:
+    def test_update_contact_details(self, mock_post) -> None:
         # update contact details
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = {
@@ -208,7 +207,7 @@ class TestCustomerRequest(unittest.TestCase):
         self.assertEqual(address["postalCode"], new_postcode)
 
     @patch("requests.Session.get")
-    def test_list_customers(self, mock_get) -> NoReturn:
+    def test_list_customers(self, mock_get) -> None:
         mock_get.return_value.status_code = 200
         mock_get.return_value.json.return_value = load_json_file("tests/data/customers.json")
         response = self.client.list_customers()

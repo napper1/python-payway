@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import copy
 import unittest
-from typing import NoReturn
 from unittest.mock import patch
 
 from payway.client import Client
@@ -18,7 +17,7 @@ from payway.test_utils import load_json_file
 
 class TestClient(unittest.TestCase):
     @classmethod
-    def setUpClass(cls) -> NoReturn:
+    def setUpClass(cls) -> None:
         merchant_id = "TEST"
         bank_account_id = "0000000A"
         publishable_api_key = "TPUBLISHABLE-API-KEY"
@@ -72,7 +71,7 @@ class TestClient(unittest.TestCase):
         cls.payment = PayWayPayment(
             customer_number="",
             transaction_type="payment",
-            amount="10",
+            amount=10,
             currency="aud",
             order_number="5100",
             ip_address="127.0.0.1",
@@ -80,7 +79,7 @@ class TestClient(unittest.TestCase):
         cls.pre_auth_payment = PayWayPayment(
             customer_number="",
             transaction_type="preAuth",
-            amount="2.15",
+            amount=2.15,
             currency="aud",
             order_number="5110",
             ip_address="127.0.0.1",
@@ -88,7 +87,7 @@ class TestClient(unittest.TestCase):
         cls.pre_auth_capture_payment = PayWayPayment(
             transaction_type="capture",
             parent_transaction_id="",
-            amount="2.15",
+            amount=2.15,
             order_number="5111",
             ip_address="127.0.0.1",
         )
@@ -104,7 +103,7 @@ class TestClient(unittest.TestCase):
         )
 
     @patch("requests.post")
-    def test_create_token(self, mock_post) -> NoReturn:
+    def test_create_token(self, mock_post) -> None:
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = {
             "singleUseTokenId": "2bcec36f-7b02-43db-b3ec-bfb65acfe272",
@@ -118,7 +117,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(token_response.token, "2bcec36f-7b02-43db-b3ec-bfb65acfe272")
 
     @patch("requests.post")
-    def test_create_bank_account_token(self, mock_post) -> NoReturn:
+    def test_create_bank_account_token(self, mock_post) -> None:
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = {
             "singleUseTokenId": "3bcec36f-7b02-43db-b3ec-bfb65acfe272",
@@ -131,7 +130,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(token, "3bcec36f-7b02-43db-b3ec-bfb65acfe272")
 
     @patch("requests.post")
-    def test_create_customer(self, mock_post) -> NoReturn:
+    def test_create_customer(self, mock_post) -> None:
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = load_json_file("tests/data/customer.json")
         card = self.card
@@ -146,7 +145,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(payway_customer.email_address, "bect@example.net")
 
     @patch("requests.put")
-    def test_create_customer_with_custom_id(self, mock_post) -> NoReturn:
+    def test_create_customer_with_custom_id(self, mock_post) -> None:
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = load_json_file("tests/data/customer.json")
         customer = copy.deepcopy(self.customer)
@@ -158,7 +157,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(payway_customer_number, "98")
 
     @patch("requests.post")
-    def test_process_payment(self, mock_post) -> NoReturn:
+    def test_process_payment(self, mock_post) -> None:
         # Take payment (using a credit card token)
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = load_json_file("tests/data/transaction.json")
@@ -177,7 +176,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(transaction.response_code, "11")
 
     @patch("requests.post")
-    def test_process_payment_with_idempotency_key(self, mock_post) -> NoReturn:
+    def test_process_payment_with_idempotency_key(self, mock_post) -> None:
         """
         Send a payment using a unique idempotency key to try and avoid duplicate POSTs
         https://www.payway.com.au/docs/rest.html#avoiding-duplicate-posts
@@ -204,7 +203,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(transaction.response_code, "11")
 
     @patch("requests.get")
-    def test_get_transaction_card(self, mock_get) -> NoReturn:
+    def test_get_transaction_card(self, mock_get) -> None:
         mock_get.return_value.status_code = 200
         mock_get.return_value.json.return_value = load_json_file("tests/data/card_transaction.json")
         transaction, errors = self.client.get_transaction(
@@ -215,7 +214,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(transaction.transaction_id, 1179985404)
 
     @patch("requests.post")
-    def test_void(self, mock_post) -> NoReturn:
+    def test_void(self, mock_post) -> None:
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = load_json_file("tests/data/void_transaction.json")
         void_transaction, void_errors = self.client.void_transaction(1179985404)
@@ -224,7 +223,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(void_transaction.status, "voided")
 
     @patch("requests.post")
-    def test_refund(self, mock_post) -> NoReturn:
+    def test_refund(self, mock_post) -> None:
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = load_json_file("tests/data/refund_transaction.json")
         transaction, errors = self.client.refund_transaction(
@@ -235,7 +234,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(transaction.status, "refunded")
 
     @patch("requests.get")
-    def test_get_customer(self, mock_get) -> NoReturn:
+    def test_get_customer(self, mock_get) -> None:
         mock_get.return_value.status_code = 200
         mock_get.return_value.json.return_value = load_json_file("tests/data/customer.json")
         customer, customer_errors = self.client.get_customer("98")
@@ -245,7 +244,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(customer.customer_name, "Rebecca Turing")
 
     @patch("requests.put")
-    def test_update_payment_setup_card(self, mock_post) -> NoReturn:
+    def test_update_payment_setup_card(self, mock_post) -> None:
         # update card or bank account in PayWay from token
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = {

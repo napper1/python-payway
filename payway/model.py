@@ -48,7 +48,7 @@ class PayWayCard:
         }
 
     @staticmethod
-    def from_dict(payway_card: dict) -> PayWayCard:
+    def from_dict(payway_card: dict[str, Any]) -> PayWayCard:
         card = PayWayCard()
         if payway_card.get("maskedCardNumber"):
             card.card_number = payway_card.get("maskedCardNumber")
@@ -124,14 +124,14 @@ class PayWayCustomer:
         return customer
 
     @staticmethod
-    def from_dict(response: dict) -> PayWayCustomer:
+    def from_dict(response: dict[str, Any]) -> PayWayCustomer:
         """
         Parse PayWay Customer response data
         :param response: dict    PayWay response dictionary
         :return:
         """
         customer = PayWayCustomer()
-        contact = response.get("contact")
+        contact = response.get("contact", {})
         customer.customer_name = contact.get("customerName")
         customer.email_address = contact.get("emailAddress")
         customer.send_email_receipts = contact.get("sendEmailReceipts")
@@ -146,11 +146,11 @@ class PayWayCustomer:
 
         if response.get("paymentSetup") is not None:
             customer.payment_setup = PaymentSetup().from_dict(
-                response.get("paymentSetup"),
+                response.get("paymentSetup", {}),
             )
 
         if response.get("customFields") is not None:
-            custom_fields = response.get("customFields")
+            custom_fields = response.get("customFields", {})
             for k, v in custom_fields.items():
                 setattr(customer, k, v)
 
@@ -161,17 +161,17 @@ class PayWayCustomer:
 
 
 class PaymentError:
-    field_name: str = None
-    message: str = None
-    field_value: str = None
+    field_name: str | None = None
+    message: str | None = None
+    field_value: str | None = None
 
     @staticmethod
-    def from_dict(payway_response: dict) -> list:
+    def from_dict(payway_response: dict[str, Any]) -> list[PaymentError]:
         """
         Returns a list of errors from PayWay
         :param: payway_response: dict PayWay response dictionary
         """
-        errors = payway_response.get("data")
+        errors = payway_response.get("data", [])
         payment_errors = []
         for error in errors:
             payway_error = PaymentError()
@@ -200,17 +200,17 @@ class PaymentError:
 
 
 class ServerError:
-    error_number: int = None
-    trace_code: str = None
+    error_number: int | None = None
+    trace_code: str | None = None
 
     @staticmethod
-    def from_dict(response: dict) -> ServerError:
+    def from_dict(response: dict[str, Any]) -> ServerError:
         """
         :param: response: dict PayWay response dictionary
         """
         payway_error = ServerError()
-        payway_error.error_number = response.get("errorNumber")
-        payway_error.trace_code = response.get("traceCode")
+        payway_error.error_number = response.get("errorNumber", {})
+        payway_error.trace_code = response.get("traceCode", {})
         return payway_error
 
     def to_message(self) -> str:
@@ -233,8 +233,8 @@ class PayWayPayment:
     def __init__(
         self,
         transaction_type: str,
-        customer_number: int | None = None,
-        amount: int | None = None,
+        customer_number: str | None = None,
+        amount: float | None = None,
         currency: str | None = None,
         order_number: str | None = None,
         ip_address: str | None = None,
@@ -272,42 +272,42 @@ class PayWayPayment:
 
 
 class PayWayTransaction:
-    transaction_id: int = None
-    receipt_number: str = None
-    status: str = None
-    response_code: str = None
-    response_text: str = None
-    transaction_type: str = None
-    customer_number: str = None
-    customer_name: str = None
-    customer_email: str = None
-    bpay_ref: str = None
-    order_number: str = None
-    currency: str = None
-    principal_amount: float = None
-    surcharge_amount: float = None
-    payment_amount: float = None
-    payment_method: str = None
-    declined_date: str = None
-    card: PayWayCard = None
-    merchant: Merchant = None
-    virtual_account: dict = None
-    australia_post: dict = None
-    bpay: dict = None
-    your_bank_account: dict = None
-    customer_paypal_account: dict = None
-    your_paypal_account: dict = None
-    transaction_date_time: str = None
-    user: dict = None
-    settlement_date: str = None
-    parent_transaction: dict = None
-    ip_address: str = None
-    fraud_result: str = None
-    ip_country: str = None
-    card_country: str = None
-    custom_fields: dict = None
-    is_voidable: bool = None
-    is_refundable: bool = None
+    transaction_id: int | None = None
+    receipt_number: str | None = None
+    status: str | None = None
+    response_code: str | None = None
+    response_text: str | None = None
+    transaction_type: str | None = None
+    customer_number: str | None = None
+    customer_name: str | None = None
+    customer_email: str | None = None
+    bpay_ref: str | None = None
+    order_number: str | None = None
+    currency: str | None = None
+    principal_amount: float | None = None
+    surcharge_amount: float | None = None
+    payment_amount: float | None = None
+    payment_method: str | None = None
+    declined_date: str | None = None
+    card: PayWayCard | None = None
+    merchant: Merchant | None = None
+    virtual_account: dict[str, Any] | None = None
+    australia_post: dict[str, Any] | None = None
+    bpay: dict[str, Any] | None = None
+    your_bank_account: dict[str, Any] | None = None
+    customer_paypal_account: dict[str, Any] | None = None
+    your_paypal_account: dict[str, Any] | None = None
+    transaction_date_time: str | None = None
+    user: dict[str, Any] | None = None
+    settlement_date: str | None = None
+    parent_transaction: dict[str, Any] | None = None
+    ip_address: str | None = None
+    fraud_result: str | None = None
+    ip_country: str | None = None
+    card_country: str | None = None
+    custom_fields: dict[str, Any] | None = None
+    is_voidable: bool | None = None
+    is_refundable: bool | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -325,8 +325,8 @@ class PayWayTransaction:
             "surchargeAmount": self.surcharge_amount,
             "paymentAmount": self.payment_amount,
             "paymentMethod": self.payment_method,
-            "creditCard": self.card.to_dict(),
-            "merchant": self.merchant.to_dict(),
+            "creditCard": self.card.to_dict() if self.card is not None else {},
+            "merchant": self.merchant.to_dict() if self.merchant is not None else {},
             "virtualAccount": self.virtual_account,
             "bpaustraliaPostay": self.australia_post,
             "bpay": self.bpay,
@@ -348,7 +348,7 @@ class PayWayTransaction:
         }
 
     @staticmethod
-    def from_dict(response: dict) -> PayWayTransaction:
+    def from_dict(response: dict[str, Any]) -> PayWayTransaction:
         """
         :param: response: dict PayWay response dictionary
         """
@@ -369,10 +369,10 @@ class PayWayTransaction:
         transaction.payment_method = response.get("paymentMethod")
 
         if response.get("creditCard") is not None:
-            transaction.card = PayWayCard.from_dict(response.get("creditCard"))
+            transaction.card = PayWayCard.from_dict(response.get("creditCard", {}))
 
         if response.get("merchant") is not None:
-            transaction.merchant = Merchant.from_dict(response.get("merchant"))
+            transaction.merchant = Merchant.from_dict(response.get("merchant", {}))
 
         transaction.virtual_account = response.get("virtualAccount")
         transaction.australia_post = response.get("bpaustraliaPostay")
@@ -406,14 +406,14 @@ class Merchant:
                             account
     """
 
-    merchant_id: str = None
-    merchant_name: str = None
-    settlement_bsb: str = None
-    settlement_account_number: str = None
-    surcharge_bsb: str = None
-    surcharge_account_number: str = None
+    merchant_id: str | None = None
+    merchant_name: str | None = None
+    settlement_bsb: str | None = None
+    settlement_account_number: str | None = None
+    surcharge_bsb: str | None = None
+    surcharge_account_number: str | None = None
 
-    def to_dict(self) -> dict[str, None]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "merchantId": self.merchant_id,
             "merchantName": self.merchant_name,
@@ -424,7 +424,7 @@ class Merchant:
         }
 
     @staticmethod
-    def from_dict(payway_obj: dict) -> Merchant:
+    def from_dict(payway_obj: dict[str, Any]) -> Merchant:
         """
         :param: payway_obj: dict PayWay response dictionary
         """
@@ -439,13 +439,13 @@ class Merchant:
 
 
 class PaymentSetup:
-    payment_method: str = None
-    stopped: bool = None
-    credit_card: PayWayCard = None
-    merchant: Merchant = None
+    payment_method: str | None = None
+    stopped: bool | None = None
+    credit_card: PayWayCard | None = None
+    merchant: Merchant | None = None
 
     @staticmethod
-    def from_dict(response: dict) -> PaymentSetup:
+    def from_dict(response: dict[str, Any]) -> PaymentSetup:
         """
         :param: response: dict PayWay response dictionary
         """
@@ -453,20 +453,20 @@ class PaymentSetup:
         ps.payment_method = response.get("paymentMethod")
         ps.stopped = response.get("stopped")
         if response.get("creditCard") is not None:
-            ps.credit_card = PayWayCard().from_dict(response.get("creditCard"))
+            ps.credit_card = PayWayCard().from_dict(response.get("creditCard", {}))
         if response.get("merchant") is not None:
-            ps.merchant = Merchant().from_dict(response.get("merchant"))
+            ps.merchant = Merchant().from_dict(response.get("merchant", {}))
         return ps
 
 
 class TokenResponse:
-    token: str = None
-    payment_method: str = None
-    card: PayWayCard = None
-    bank_account: dict = None
+    token: str | None = None
+    payment_method: str | None = None
+    card: PayWayCard | None = None
+    bank_account: dict[str, Any] | None = None
 
     @staticmethod
-    def from_dict(response: dict) -> TokenResponse:
+    def from_dict(response: dict[str, Any]) -> TokenResponse:
         """
         :param: response: dict PayWay response dictionary
         """

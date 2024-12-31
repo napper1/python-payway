@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from logging import getLogger
-from typing import NoReturn
+from typing import Any
 
 import requests
 
@@ -46,7 +46,7 @@ class Client(CustomerRequest, TransactionRequest):
         bank_account_id: str,
         secret_api_key: str,
         publishable_api_key: str,
-    ) -> NoReturn:
+    ) -> None:
         """
         :param merchant_id        : str                 = PayWay Merchant ID
         :param bank_account_id   : str                  = PayWay Bank Account ID
@@ -66,8 +66,7 @@ class Client(CustomerRequest, TransactionRequest):
 
         session = requests.Session()
         session.auth = (self.secret_api_key, "")
-        headers = {"content-type": "application/x-www-form-urlencoded"}
-        session.headers = headers
+        session.headers = {"content-type": "application/x-www-form-urlencoded"}
         self.session = session
         session_no_headers = requests.Session()
         session_no_headers.auth = session.auth
@@ -79,7 +78,7 @@ class Client(CustomerRequest, TransactionRequest):
         bank_account_id: str,
         secret_api_key: str,
         publishable_api_key: str,
-    ) -> NoReturn:
+    ) -> None:
         if not merchant_id or not bank_account_id or not secret_api_key or not publishable_api_key:
             if not secret_api_key or not publishable_api_key:
                 logger.error("PayWay API keys not found")
@@ -99,7 +98,7 @@ class Client(CustomerRequest, TransactionRequest):
         return requests.get(url=endpoint, auth=(self.secret_api_key, ""), timeout=30)
 
     def post_request(
-        self, endpoint: str, data: dict, auth: tuple | None = None, idempotency_key: str | None = None
+        self, endpoint: str, data: dict[str, Any], auth: tuple[str, str] | None = None, idempotency_key: str | None = None
     ) -> requests.Response:
         """
         Supply an idempotency_key to avoid duplicate POSTs
@@ -112,7 +111,7 @@ class Client(CustomerRequest, TransactionRequest):
             headers["Idempotency-Key"] = idempotency_key
         return requests.post(url=endpoint, auth=auth, data=data, headers=headers, timeout=30)
 
-    def put_request(self, endpoint: str, data: dict) -> requests.Response:
+    def put_request(self, endpoint: str, data: dict[str, Any]) -> requests.Response:
         return requests.put(
             url=endpoint,
             auth=(self.secret_api_key, ""),
@@ -123,7 +122,7 @@ class Client(CustomerRequest, TransactionRequest):
 
     def create_token(
         self, payway_obj: BankAccount | PayWayCard, payment_method: str, idempotency_key: str | None = None
-    ) -> tuple[TokenResponse, list]:
+    ) -> tuple[TokenResponse | None, list[PaymentError] | None]:
         """
         Creates a single use token for a Customer's payment setup (credit card or bank account)
         :param payway_obj:   object: one of model.PayWayCard or model.BankAccount object
@@ -160,14 +159,18 @@ class Client(CustomerRequest, TransactionRequest):
         token_response = TokenResponse().from_dict(response.json())
         return token_response, errors
 
-    def create_card_token(self, card: PayWayCard, idempotency_key: str | None = None) -> tuple[TokenResponse, list]:
+    def create_card_token(
+        self, card: PayWayCard, idempotency_key: str | None = None
+    ) -> tuple[TokenResponse | None, list[PaymentError] | None]:
         """
         :param card:    PayWayCard object represents a customer's credit card details
         :param idempotency_key:   str: unique value to avoid duplicate POSTs
         """
         return self.create_token(card, "card", idempotency_key=idempotency_key)
 
-    def create_bank_account_token(self, bank_account: BankAccount, idempotency_key: str | None = None) -> str:
+    def create_bank_account_token(
+        self, bank_account: BankAccount, idempotency_key: str | None = None
+    ) -> tuple[TokenResponse | None, list[PaymentError] | None]:
         """
         :param bank_account:    BankAccount object represents a customer's bank account
         :param idempotency_key:   str: unique value to avoid duplicate POSTs
@@ -179,7 +182,9 @@ class Client(CustomerRequest, TransactionRequest):
             idempotency_key=idempotency_key,
         )
 
-    def create_customer(self, customer: PayWayCustomer, idempotency_key: str | None = None) -> tuple[PayWayCustomer | None, list]:
+    def create_customer(
+        self, customer: PayWayCustomer, idempotency_key: str | None = None
+    ) -> tuple[PayWayCustomer | None, list[PaymentError] | None]:
         """
         Create a customer in PayWay system
 
@@ -217,7 +222,9 @@ class Client(CustomerRequest, TransactionRequest):
         customer = PayWayCustomer().from_dict(response.json())
         return customer, errors
 
-    def process_payment(self, payment: PayWayPayment, idempotency_key: str | None = None) -> tuple[PayWayTransaction, list]:
+    def process_payment(
+        self, payment: PayWayPayment, idempotency_key: str | None = None
+    ) -> tuple[PayWayTransaction | None, list[PaymentError] | None]:
         """
         Process an individual payment against a Customer with active Recurring Billing setup.
         :param payment: PayWayPayment object (see model.PayWayPayment)
@@ -234,7 +241,7 @@ class Client(CustomerRequest, TransactionRequest):
         transaction = PayWayTransaction.from_dict(response.json())
         return transaction, errors
 
-    def _validate_response(self, response: requests.Response) -> list | None:
+    def _validate_response(self, response: requests.Response) -> list[PaymentError] | None:
         """
         Validates all responses from PayWay to catch documented PayWay errors.
         :param response: requests response object
@@ -254,7 +261,7 @@ class Client(CustomerRequest, TransactionRequest):
             503,
         ]:
             http_error_msg = f"{response.status_code} Client Error: {response.reason} for url: {response.url}"
-            raise PaywayError(code=response.status_code, message=http_error_msg)
+            raise PaywayError(code=str(response.status_code), message=http_error_msg)
 
         if response.status_code in [404, 422]:  # Documented PayWay errors in JSON
             # parse error message
@@ -265,17 +272,17 @@ class Client(CustomerRequest, TransactionRequest):
                 errors = response.json()
             except json.JSONDecodeError:
                 raise PaywayError(
-                    code=response.status_code,
+                    code=str(response.status_code),
                     message="Internal server error",
                 )
             # Documented PayWay server errors in JSON
             payway_error = ServerError().from_dict(errors)
             message = payway_error.to_message()
-            raise PaywayError(code=response.status_code, message=message)
+            raise PaywayError(code=str(response.status_code), message=message)
 
         return None
 
-    def get_transaction(self, transaction_id: int) -> tuple[PayWayTransaction, list]:
+    def get_transaction(self, transaction_id: int) -> tuple[PayWayTransaction | None, list[PaymentError] | None]:
         """
         Lookup and return a transaction if found in PayWay
         :param transaction_id: str  A PayWay transaction ID
@@ -288,7 +295,9 @@ class Client(CustomerRequest, TransactionRequest):
         transaction = PayWayTransaction.from_dict(response.json())
         return transaction, errors
 
-    def void_transaction(self, transaction_id: int, idempotency_key: str | None = None) -> tuple[PayWayTransaction, list]:
+    def void_transaction(
+        self, transaction_id: int, idempotency_key: str | None = None
+    ) -> tuple[PayWayTransaction | None, list[PaymentError] | None]:
         """
         Void a transaction in PayWay
         :param transaction_id: str  A PayWay transaction ID
@@ -309,7 +318,7 @@ class Client(CustomerRequest, TransactionRequest):
         order_id: str | None = None,
         ip_address: str | None = None,
         idempotency_key: str | None = None,
-    ) -> tuple[PayWayTransaction, list]:
+    ) -> tuple[PayWayTransaction | None, list[PaymentError] | None]:
         """
         Refund a transaction in PayWay
         :param transaction_id: str  A PayWay transaction ID
@@ -334,7 +343,7 @@ class Client(CustomerRequest, TransactionRequest):
         transaction = PayWayTransaction.from_dict(response.json())
         return transaction, errors
 
-    def get_customer(self, customer_id: str) -> tuple[PayWayCustomer, list]:
+    def get_customer(self, customer_id: str) -> tuple[PayWayCustomer | None, list[PaymentError] | None]:
         """
         Returns a PayWay Customer's Payment Setup, [Payment] Schedule, Contact Details, Custom Fields and Notes
         :param customer_id  str PayWay customer ID in PayWay system
@@ -347,7 +356,7 @@ class Client(CustomerRequest, TransactionRequest):
         customer = PayWayCustomer.from_dict(response.json())
         return customer, errors
 
-    def update_payment_setup(self, token: str, customer_id: str) -> tuple[PaymentSetup, str]:
+    def update_payment_setup(self, token: str, customer_id: str) -> tuple[PaymentSetup | None, list[PaymentError] | None]:
         """
         Updates the Customer's Payment Setup with a new Credit Card or Bank Account.
         :param token: PayWay credit card or bank account token

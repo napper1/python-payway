@@ -114,7 +114,7 @@ exclude = ["__init__.py"]
 required-imports = ["from __future__ import annotations"]
 
 [tool.pyright]
-typeCheckingMode = "off"
+typeCheckingMode = "strict"
 
 [tool.pytest.ini_options]
 log_cli = true
