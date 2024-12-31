@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import requests
 
 from payway.conf import CUSTOMER_URL
@@ -79,7 +81,7 @@ class CustomerRequest:
 
     @json_list("update_contact_details")
     def update_contact_details(
-        self, customer_number: int, customer: PayWayCustomer | None = None, **options: dict
+        self, customer_number: int, customer: PayWayCustomer | None = None, **options: dict[str, Any]
     ) -> requests.Response:
         """
         param: customer_number: PayWay customer number
