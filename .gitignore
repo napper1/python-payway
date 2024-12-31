@@ -25,3 +25,11 @@ dist/
 build/
 *.egg-info
 .envrc
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.ruff_cache

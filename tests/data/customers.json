@@ -1,0 +1,16 @@
+{
+    "data": [
+        {
+            "customerName": "Jack Smith",
+            "emailAddress": "jacksmith@example.com",
+            "phoneNumber": "0353532323",
+            "address": {
+                "street1": "3 Test St",
+                "street2": "Apt 1",
+                "cityName": "Melbourne",
+                "state": "VIC",
+                "postalCode": "3029"
+            }
+        }
+    ]
+}

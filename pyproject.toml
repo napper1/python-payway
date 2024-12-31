@@ -1,0 +1,128 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "python-payway"
+version = "0.0.4"
+description = "Python client for working with Westpac's PayWay REST API"
+authors = [
+    { name = "Ben Napper", email = "reppan197@gmail.com" }
+]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
+dependencies = [
+    "mypy>=0.971",
+    "requests>=2.20.0",
+    "ruff==0.6.6",
+]
+keywords = ["payway", "westpac", "api", "client"]
+
+[tool.mypy]
+python_version = "3.8"
+check_untyped_defs = true
+ignore_missing_imports = true
+allow_redefinition = false
+warn_unreachable = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+
+[tool.ruff]
+fix = true
+line-length = 131
+target-version = "py38"
+
+[tool.ruff.lint]
+select = [
+  "F",
+  "E",
+  "W",
+  "C90",
+  "I",
+  "N",
+  "UP",
+  "YTT",
+  "ANN",
+  "ASYNC",
+  "S",
+  "BLE",
+  "FBT",
+  "B",
+  "A",
+  "COM",
+  "C4",
+  "DTZ",
+  "T10",
+  "DJ",
+  "EM",
+  "EXE",
+  "FA",
+  'ISC',
+  "ICN",
+  "G",
+  'INP',
+  'PIE',
+  "T20",
+  'PYI',
+  'PT',
+  "Q",
+  "RSE",
+  "RET",
+  "SLF",
+  "SLOT",
+  "SIM",
+  "TID",
+  "INT",
+  "ERA",
+  "PD",
+  "PGH",
+  "PL",
+  "TRY",
+  "FLY",
+  "PERF",
+  "RUF",
+]
+ignore = ["ANN101", "COM812", "ISC001"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "I"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 5
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+exclude = ["__init__.py"]
+
+[tool.ruff.lint.isort]
+required-imports = ["from __future__ import annotations"]
+
+[tool.pyright]
+typeCheckingMode = "off"
+
+[tool.pytest.ini_options]
+log_cli = true
+log_cli_level = "INFO"
+log_format = "%(asctime)s %(levelname)s %(message)s"
+log_date_format = "%Y-%m-%d %H:%M:%S"
+addopts = "-v -ra -q"
+filterwarnings = [
+  "ignore:.*defines default_app_config.*",
+  "ignore:The providing_args argument is deprecated..*",
+  "ignore::DeprecationWarning",
+]
+
+[tool.bandit]
+exclude_dirs = ["tests", "migrations"]
+tests = ["B201", "B301"]

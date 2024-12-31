@@ -1,0 +1,20 @@
+{
+    "data": [
+        {
+            "transactionId": 1179985404,
+            "receiptNumber": "1179985404",
+            "status": "approved",
+            "responseCode": "11",
+            "responseText": "Approved VIP",
+            "transactionType": "payment",
+            "customerNumber": "1",
+            "customerName": "Po & Sons Pty Ltd",
+            "customerEmail": "henry@example.net",
+            "currency": "aud",
+            "principalAmount": 100.00,
+            "surchargeAmount": 1.00,
+            "paymentAmount": 101.00,
+            "paymentMethod": "creditCard"
+        }
+    ]
+}

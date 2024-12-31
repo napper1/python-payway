@@ -1,0 +1,20 @@
+{
+    "customerNumber": "98",
+    "paymentSetup": {},
+    "contact": {
+        "customerName": "Rebecca Turing",
+        "emailAddress": "bect@example.net",
+        "sendEmailReceipts": true,
+        "phoneNumber": "04 9999 8888",
+        "address": {
+            "street1": "12 Test St",
+            "street2": null,
+            "cityName": "Wombat",
+            "state": "NSW",
+            "postalCode": "2587"
+        }
+    },
+    "customFields": {"customField1": "Senior"},
+    "notes": {"notes": "Example notes"},
+    "virtualAccount": {}
+}

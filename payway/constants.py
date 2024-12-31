@@ -1,5 +1,4 @@
-from __future__ import unicode_literals
-
+from __future__ import annotations
 
 TRANSACTION_APPROVED = "0"
 
@@ -55,7 +54,7 @@ EFT_RESPONSE_CODES = {
     "QN": "Configuration Error",
     "QO": "Missing Payment Instrument",
     "QP": "Missing Supplier Account",
-    "QQ": "Invalid Credit Card \ Invalid Credit Card Verification Number",
+    "QQ": r"Invalid Credit Card \ Invalid Credit Card Verification Number",
     "QR": "Transaction Retry",
     "QS": "Transaction Successful",
     "QT": "Invalid currency",

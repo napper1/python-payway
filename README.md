@@ -8,13 +8,13 @@
 - Void transactions
 - Update a customer's payment setup in PayWay
 
-# Install
+## Install
 
-```
+```bash
 pip install python-payway
 ```
 
-# Take payment using a stored credit card
+## Take payment using a stored credit card
 
 Create a Client class with your PayWay API credentials
 
@@ -41,7 +41,7 @@ customer = PayWayCustomer(custom_id='c981a',
                           state='NSW',
                           postal_code='2000')
 ```
-        
+
 Create a PayWayCard class with your customer's card details
 
 ```python
@@ -62,7 +62,7 @@ payway_customer, customer_errors = client.create_customer(customer)
 ```
 
 Note the 'payway_customer' object contains the full customer response fields from PayWay.
-        
+
 Create a Payment class with the payment details and process the transaction
 
 ```python
@@ -74,8 +74,8 @@ payment = PayWayPayment(customer_number=customer_number,
                         order_number='',
                         ip_address='')
 transaction, errors = client.process_payment(payment)
-```    
-                                 
+```
+
 Check the `transaction` for the result
 
 ```python
@@ -83,7 +83,7 @@ if not errors and transaction.status == 'approved':
     # process successful response
 ```
 
-# Take payment using a credit card token only
+## Take payment using a credit card token only
 
 ```python
 client = Client(merchant_id='',
@@ -109,10 +109,10 @@ payment = PayWayPayment(customer_number=customer_number,
 transaction, errors = client.process_payment(payment)
 ```
 
-# Handling errors
+## Handling errors
 
 Documented errors (such as 422 Unprocessable entity) are parsed into an PaymentError class that you can use in an customer error message.
-https://www.payway.com.au/docs/rest.html#http-response-codes
+For more info, visit <https://www.payway.com.au/docs/rest.html#http-response-codes>
 
 ```python
 if errors:
@@ -122,9 +122,10 @@ if errors:
         print(error.field_name)
     # or use a method
     PaymentError().list_to_message(errors) 
-```     
+```
 
-# Direct Debit
+## Direct Debit
+
 Direct debit transactions are possible by creating a token from a bank account:
 
 ```python
@@ -137,15 +138,15 @@ Store the token with a customer in PayWay using the same process as the card out
 
 Note: direct debit transactions take days to process so they must be polled regularly for the latest transaction status from the customer's bank.
 
-# Lookup transaction
+## Lookup transaction
 
 Poll a transaction using the `get_transaction` method.
 
 ```python
 transaction, errors = client.get_transaction(transaction.transaction_id)
-``` 
+```
 
-# Process and capture a pre-authorisation
+## Process and capture a pre-authorisation
 
 To process a credit card pre-authorisation using a credit card stored against a customer use `preAuth` as the `transaction_type` along with the customer's PayWay number, amount and currency.
 
@@ -170,7 +171,7 @@ capture_payment = PayWayPayment(transaction_type='capture',
 transaction, errors = client.process_payment(capture_payment)
 ```
 
-# Refunds
+## Refunds
 
 Refund a transaction by supplying a PayWay transaction ID and the refund amount.
 
@@ -181,7 +182,7 @@ refund, errors = client.refund_transaction(
 )
 ```
 
-# Voiding a transaction
+## Voiding a transaction
 
 Void a transaction by supplying a PayWay transaction ID.
 
@@ -189,7 +190,7 @@ Void a transaction by supplying a PayWay transaction ID.
 void_transaction, errors = client.void_transaction(transaction.transaction_id)
 ```
 
-# Update Payment Setup
+## Update Payment Setup
 
 Update a customer's payment setup with a new credit card or bank account in PayWay. Supply the new token and an existing PayWay customer number.
 
@@ -197,18 +198,28 @@ Update a customer's payment setup with a new credit card or bank account in PayW
 payment_setup, errors = client.update_payment_setup(new_token, payway_customer.customer_number)
 ```
 
-# Additional notes                             
-PayWay API documentation
-https://www.payway.com.au/docs/rest.html
+## Additional notes
 
-It is recommended to use PayWay's Trusted Frame https://www.payway.com.au/docs/rest.html#trusted-frame
+PayWay API documentation <https://www.payway.com.au/docs/rest.html>
+
+It is recommended to use PayWay's Trusted Frame <https://www.payway.com.au/docs/rest.html#trusted-frame>
 when creating a single use token of a card or bank account so your PCI-compliance scope is reduced.  
 
-# Fraud
+## Fraud
 
-Please follow PayWay's advice about reducing your risk of fraudulent transactions.
-https://www.payway.com.au/docs/card-testing.html#card-testing
+Please follow PayWay's advice about reducing your risk of fraudulent transactions. <https://www.payway.com.au/docs/card-testing.html#card-testing>
 
-# Testing
+## Running the project
 
-1. Run the tests using `python -m unittest discover tests`
+```bash
+uv python install 3.8.19
+uv venv
+source .venv/bin/activate
+uv sync
+```
+
+## Testing
+
+```bash
+python -m unittest discover tests
+```

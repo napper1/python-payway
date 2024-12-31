@@ -1,14 +1,18 @@
-import unittest
+from __future__ import annotations
+
 import datetime
+import unittest
+from typing import NoReturn
 from unittest.mock import patch
 
 from payway.client import Client
-from payway.model import PayWayCard, PayWayCustomer, PayWayPayment, BankAccount
+from payway.model import BankAccount, PayWayCard, PayWayCustomer, PayWayPayment
+from payway.test_utils import load_json_file
 
 
 class TestCustomerRequest(unittest.TestCase):
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> NoReturn:
         """
         You will need to create a sandbox PayWay account and add your sandbox API keys into your environment
         """
@@ -98,7 +102,7 @@ class TestCustomerRequest(unittest.TestCase):
         )
 
     @patch("requests.Session.patch")
-    def test_stop_all_payments(self, mock_post):
+    def test_stop_all_payments(self, mock_post) -> NoReturn:
         # stop payments for customer
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = {
@@ -109,7 +113,7 @@ class TestCustomerRequest(unittest.TestCase):
         self.assertEqual(stopped, True)
 
     @patch("requests.Session.patch")
-    def test_start_all_payments(self, mock_post):
+    def test_start_all_payments(self, mock_post) -> NoReturn:
         # start payments for customer
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = {
@@ -120,14 +124,14 @@ class TestCustomerRequest(unittest.TestCase):
         self.assertEqual(stopped, False)
 
     @patch("requests.Session.delete")
-    def test_delete_customer(self, mock_post):
+    def test_delete_customer(self, mock_post) -> NoReturn:
         mock_post.return_value.status_code = 204
         # delete customer record in PayWay
         response = self.client.delete_customer("1")
         self.assertEqual(response.status_code, 204)
 
     @patch("requests.Session.put")
-    def test_schedule_payments(self, mock_post):
+    def test_schedule_payments(self, mock_post) -> NoReturn:
         next_week = datetime.datetime.now() + datetime.timedelta(weeks=1)
         next_payment_date = next_week.strftime("%d %b %Y")
         mock_post.return_value.status_code = 200
@@ -152,14 +156,14 @@ class TestCustomerRequest(unittest.TestCase):
         self.assertEqual(response["regularPaymentAmount"], 10.50)
 
     @patch("requests.Session.delete")
-    def test_stop_schedule(self, mock_post):
+    def test_stop_schedule(self, mock_post) -> NoReturn:
         # stop schedule
         mock_post.return_value.status_code = 204
         response = self.client.stop_schedule("1")
         self.assertEqual(response.status_code, 204)
 
     @patch("requests.Session.put")
-    def test_update_contact_details(self, mock_post):
+    def test_update_contact_details(self, mock_post) -> NoReturn:
         # update contact details
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = {
@@ -204,24 +208,9 @@ class TestCustomerRequest(unittest.TestCase):
         self.assertEqual(address["postalCode"], new_postcode)
 
     @patch("requests.Session.get")
-    def test_list_customers(self, mock_get):
+    def test_list_customers(self, mock_get) -> NoReturn:
         mock_get.return_value.status_code = 200
-        mock_get.return_value.json.return_value = {
-            "data": [
-                {
-                    "customerName": "Jack Smith",
-                    "emailAddress": "jacksmith@example.com",
-                    "phoneNumber": "0353532323",
-                    "address": {
-                        "street1": "3 Test St",
-                        "street2": "Apt 1",
-                        "cityName": "Melbourne",
-                        "state": "VIC",
-                        "postalCode": "3029",
-                    },
-                },
-            ],
-        }
+        mock_get.return_value.json.return_value = load_json_file("tests/data/customers.json")
         response = self.client.list_customers()
         self.assertEqual(response.__class__, dict)
         self.assertIsNotNone(response)
