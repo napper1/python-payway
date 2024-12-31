@@ -1,9 +1,13 @@
+from __future__ import annotations
+
+from typing import Callable
+
 from payway.exceptions import PaywayError
 
 
-def json_list(name):
-    def decorator(function):
-        def wrapper(*args, **kwargs):
+def json_list(name: str) -> Callable:
+    def decorator(function) -> Callable:
+        def wrapper(*args: dict, **kwargs: dict) -> dict:
             result = function(*args, **kwargs)
             if result.status_code in [422, 404]:
                 return result.json()

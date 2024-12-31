@@ -1,19 +1,24 @@
+from __future__ import annotations
+
 import copy
 import unittest
+from typing import NoReturn
 from unittest.mock import patch
+
 from payway.client import Client
 from payway.model import (
+    BankAccount,
     PayWayCard,
     PayWayCustomer,
     PayWayPayment,
     PayWayTransaction,
-    BankAccount,
 )
+from payway.test_utils import load_json_file
 
 
 class TestClient(unittest.TestCase):
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> NoReturn:
         merchant_id = "TEST"
         bank_account_id = "0000000A"
         publishable_api_key = "TPUBLISHABLE-API-KEY"
@@ -26,7 +31,6 @@ class TestClient(unittest.TestCase):
             secret_api_key=secret_api_key,
         )
         cls.customer = PayWayCustomer(
-            # custom_id="c981a",
             customer_name="John Smith",
             email_address="johnsmith@example.com",
             send_email_receipts=False,  # not available in sandbox
@@ -91,16 +95,16 @@ class TestClient(unittest.TestCase):
         cls.bank_account = BankAccount(
             account_name="Test",
             bsb="000-000",
-            account_number=123456,
+            account_number="123456",
         )
         cls.invalid_bank_account = BankAccount(
             account_name="Test",
             bsb="000-001",
-            account_number=123456,
+            account_number="123456",
         )
 
     @patch("requests.post")
-    def test_create_token(self, mock_post):
+    def test_create_token(self, mock_post) -> NoReturn:
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = {
             "singleUseTokenId": "2bcec36f-7b02-43db-b3ec-bfb65acfe272",
@@ -114,7 +118,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(token_response.token, "2bcec36f-7b02-43db-b3ec-bfb65acfe272")
 
     @patch("requests.post")
-    def test_create_bank_account_token(self, mock_post):
+    def test_create_bank_account_token(self, mock_post) -> NoReturn:
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = {
             "singleUseTokenId": "3bcec36f-7b02-43db-b3ec-bfb65acfe272",
@@ -127,24 +131,9 @@ class TestClient(unittest.TestCase):
         self.assertEqual(token, "3bcec36f-7b02-43db-b3ec-bfb65acfe272")
 
     @patch("requests.post")
-    def test_create_customer(self, mock_post):
+    def test_create_customer(self, mock_post) -> NoReturn:
         mock_post.return_value.status_code = 200
-        mock_post.return_value.json.return_value = {
-            "customerNumber": "1",
-            "contact": {
-                "customerName": "John Smith",
-                "emailAddress": "johnsmith@example.com",
-                "sendEmailReceipts": False,
-                "phoneNumber": "0343232323",
-                "address": {
-                    "street1": "1 Test Street",
-                    "street2": "",
-                    "cityName": "Sydney",
-                    "state": "NSW",
-                    "postalCode": "2000",
-                },
-            },
-        }
+        mock_post.return_value.json.return_value = load_json_file("tests/data/customer.json")
         card = self.card
         token_response, errors = self.client.create_card_token(card)
         customer = self.customer
@@ -152,81 +141,29 @@ class TestClient(unittest.TestCase):
         payway_customer, customer_errors = self.client.create_customer(customer)
         payway_customer_number = payway_customer.customer_number
         self.assertIsNotNone(payway_customer_number)
-        self.assertEqual(payway_customer_number, "1")
-        self.assertEqual(payway_customer.customer_name, "John Smith")
-        self.assertEqual(payway_customer.email_address, "johnsmith@example.com")
+        self.assertEqual(payway_customer_number, "98")
+        self.assertEqual(payway_customer.customer_name, "Rebecca Turing")
+        self.assertEqual(payway_customer.email_address, "bect@example.net")
 
     @patch("requests.put")
-    def test_create_customer_with_custom_id(self, mock_post):
+    def test_create_customer_with_custom_id(self, mock_post) -> NoReturn:
         mock_post.return_value.status_code = 200
-        mock_post.return_value.json.return_value = {
-            "customerNumber": "1",
-            "contact": {
-                "customerName": "John Smith",
-                "emailAddress": "johnsmith@example.com",
-                "sendEmailReceipts": False,
-                "phoneNumber": "0343232323",
-                "address": {
-                    "street1": "1 Test Street",
-                    "street2": "",
-                    "cityName": "Sydney",
-                    "state": "NSW",
-                    "postalCode": "2000",
-                },
-            },
-        }
+        mock_post.return_value.json.return_value = load_json_file("tests/data/customer.json")
         customer = copy.deepcopy(self.customer)
         customer.custom_id = "a123"
         customer.token = "1234"
         payway_customer, customer_errors = self.client.create_customer(customer)
         payway_customer_number = payway_customer.customer_number
         self.assertIsNotNone(payway_customer_number)
-        self.assertEqual(payway_customer_number, "1")
+        self.assertEqual(payway_customer_number, "98")
 
     @patch("requests.post")
-    def test_process_payment(self, mock_post):
+    def test_process_payment(self, mock_post) -> NoReturn:
         # Take payment (using a credit card token)
         mock_post.return_value.status_code = 200
-        mock_post.return_value.json.return_value = {
-            "transactionId": 1179985404,
-            "receiptNumber": "1179985404",
-            "status": "approved",
-            "responseCode": "11",
-            "responseText": "Approved VIP",
-            "transactionType": "payment",
-            "customerNumber": "1",
-            "customerName": "Po & Sons Pty Ltd",
-            "customerEmail": "henry@example.net",
-            "currency": "aud",
-            "principalAmount": 100.00,
-            "surchargeAmount": 1.00,
-            "paymentAmount": 101.00,
-            "paymentMethod": "creditCard",
-            "creditCard": {
-                "cardNumber": "456471...004",
-                "expiryDateMonth": "02",
-                "expiryDateYear": "19",
-                "cardScheme": "visa",
-                "cardType": "credit",
-                "cardholderName": "Po & Sons Pty Ltd",
-            },
-            "merchant": {
-                "merchantId": "4638116",
-                "merchantName": "MEGS BEAUTY AND NAILS",
-                "settlementBsb": "133-605",
-                "settlementAccountNumber": "172174",
-                "surchargeBsb": "133-606",
-                "surchargeAccountNumber": "172131",
-            },
-            "transactionDateTime": "12 Jun 2015 18:22 AEST",
-            "user": "BILLC786",
-            "settlementDate": "13 Jun 2015",
-            "isVoidable": True,
-            "isRefundable": False,
-        }
-        customer_number = "1"
+        mock_post.return_value.json.return_value = load_json_file("tests/data/transaction.json")
         payment = copy.deepcopy(self.payment)
-        payment.customer_number = customer_number
+        payment.customer_number = "1"
         payment.token = "2bcec36f-7b02-43db-b3ec-bfb65acfe272"
         payment.order_number = "5200"
         payment.merchant_id = self.client.merchant_id
@@ -240,49 +177,14 @@ class TestClient(unittest.TestCase):
         self.assertEqual(transaction.response_code, "11")
 
     @patch("requests.post")
-    def test_process_payment_with_idempotency_key(self, mock_post):
+    def test_process_payment_with_idempotency_key(self, mock_post) -> NoReturn:
         """
         Send a payment using a unique idempotency key to try and avoid duplicate POSTs
         https://www.payway.com.au/docs/rest.html#avoiding-duplicate-posts
         """
         mock_post.return_value.status_code = 200
-        mock_post.return_value.json.return_value = {
-            "transactionId": 1179985404,
-            "receiptNumber": "1179985404",
-            "status": "approved",
-            "responseCode": "11",
-            "responseText": "Approved VIP",
-            "transactionType": "payment",
-            "customerNumber": "1",
-            "customerName": "Po & Sons Pty Ltd",
-            "customerEmail": "henry@example.net",
-            "currency": "aud",
-            "principalAmount": 100.00,
-            "surchargeAmount": 1.00,
-            "paymentAmount": 101.00,
-            "paymentMethod": "creditCard",
-            "creditCard": {
-                "cardNumber": "456471...004",
-                "expiryDateMonth": "02",
-                "expiryDateYear": "19",
-                "cardScheme": "visa",
-                "cardType": "credit",
-                "cardholderName": "Po & Sons Pty Ltd",
-            },
-            "merchant": {
-                "merchantId": "4638116",
-                "merchantName": "MEGS BEAUTY AND NAILS",
-                "settlementBsb": "133-605",
-                "settlementAccountNumber": "172174",
-                "surchargeBsb": "133-606",
-                "surchargeAccountNumber": "172131",
-            },
-            "transactionDateTime": "12 Jun 2015 18:22 AEST",
-            "user": "BILLC786",
-            "settlementDate": "13 Jun 2015",
-            "isVoidable": True,
-            "isRefundable": False,
-        }
+        # load json file
+        mock_post.return_value.json.return_value = load_json_file("tests/data/transaction.json")
         customer_number = "1"
         payment = copy.deepcopy(self.payment)
         payment.customer_number = customer_number
@@ -291,7 +193,8 @@ class TestClient(unittest.TestCase):
         payment.merchant_id = self.client.merchant_id
         idempotency_key = "f223179b-da1d-474b-a6fc-b78bc429f76d"
         transaction, errors = self.client.process_payment(
-            payment, idempotency_key=idempotency_key
+            payment,
+            idempotency_key=idempotency_key,
         )
         self.assertIsInstance(transaction, PayWayTransaction)
         self.assertIsNone(errors)
@@ -301,45 +204,9 @@ class TestClient(unittest.TestCase):
         self.assertEqual(transaction.response_code, "11")
 
     @patch("requests.get")
-    def test_get_transaction_card(self, mock_get):
+    def test_get_transaction_card(self, mock_get) -> NoReturn:
         mock_get.return_value.status_code = 200
-        mock_get.return_value.json.return_value = {
-            "transactionId": 1179985404,
-            "receiptNumber": "1179985404",
-            "status": "approved",
-            "responseCode": "11",
-            "responseText": "Approved VIP",
-            "transactionType": "payment",
-            "customerNumber": "1",
-            "customerName": "Po & Sons Pty Ltd",
-            "customerEmail": "henry@example.net",
-            "currency": "aud",
-            "principalAmount": 100.00,
-            "surchargeAmount": 1.00,
-            "paymentAmount": 101.00,
-            "paymentMethod": "creditCard",
-            "creditCard": {
-                "cardNumber": "456471...004",
-                "expiryDateMonth": "02",
-                "expiryDateYear": "19",
-                "cardScheme": "visa",
-                "cardType": "credit",
-                "cardholderName": "Po & Sons Pty Ltd",
-            },
-            "merchant": {
-                "merchantId": "4638116",
-                "merchantName": "MEGS BEAUTY AND NAILS",
-                "settlementBsb": "133-605",
-                "settlementAccountNumber": "172174",
-                "surchargeBsb": "133-606",
-                "surchargeAccountNumber": "172131",
-            },
-            "transactionDateTime": "12 Jun 2015 18:22 AEST",
-            "user": "BILLC786",
-            "settlementDate": "13 Jun 2015",
-            "isVoidable": True,
-            "isRefundable": False,
-        }
+        mock_get.return_value.json.return_value = load_json_file("tests/data/card_transaction.json")
         transaction, errors = self.client.get_transaction(
             1179985404,
         )
@@ -348,84 +215,18 @@ class TestClient(unittest.TestCase):
         self.assertEqual(transaction.transaction_id, 1179985404)
 
     @patch("requests.post")
-    def test_void(self, mock_post):
+    def test_void(self, mock_post) -> NoReturn:
         mock_post.return_value.status_code = 200
-        mock_post.return_value.json.return_value = {
-            "transactionId": 1179985404,
-            "receiptNumber": "1179985404",
-            "status": "voided",
-            "customerNumber": "1",
-            "customerName": "Po & Sons Pty Ltd",
-            "customerEmail": "henry@example.net",
-            "currency": "aud",
-            "principalAmount": 100.00,
-            "surchargeAmount": 1.00,
-            "paymentAmount": 101.00,
-            "paymentMethod": "creditCard",
-            "creditCard": {
-                "cardNumber": "456471...004",
-                "expiryDateMonth": "02",
-                "expiryDateYear": "19",
-                "cardScheme": "visa",
-                "cardType": "credit",
-                "cardholderName": "Po & Sons Pty Ltd",
-            },
-            "merchant": {
-                "merchantId": "4638116",
-                "merchantName": "MEGS BEAUTY AND NAILS",
-                "settlementBsb": "133-605",
-                "settlementAccountNumber": "172174",
-                "surchargeBsb": "133-606",
-                "surchargeAccountNumber": "172131",
-            },
-            "transactionDateTime": "12 Jun 2015 18:22 AEST",
-            "user": "BILLC786",
-            "settlementDate": "13 Jun 2015",
-            "isVoidable": True,
-            "isRefundable": False,
-        }
+        mock_post.return_value.json.return_value = load_json_file("tests/data/void_transaction.json")
         void_transaction, void_errors = self.client.void_transaction(1179985404)
         self.assertIsNone(void_errors)
         self.assertIsNotNone(void_transaction)
         self.assertEqual(void_transaction.status, "voided")
 
     @patch("requests.post")
-    def test_refund(self, mock_post):
+    def test_refund(self, mock_post) -> NoReturn:
         mock_post.return_value.status_code = 200
-        mock_post.return_value.json.return_value = {
-            "transactionId": 1179985404,
-            "receiptNumber": "1179985404",
-            "status": "refunded",
-            "customerNumber": "1",
-            "customerName": "Po & Sons Pty Ltd",
-            "customerEmail": "henry@example.net",
-            "currency": "aud",
-            "principalAmount": 100.00,
-            "surchargeAmount": 1.00,
-            "paymentAmount": 101.00,
-            "paymentMethod": "creditCard",
-            "creditCard": {
-                "cardNumber": "456471...004",
-                "expiryDateMonth": "02",
-                "expiryDateYear": "19",
-                "cardScheme": "visa",
-                "cardType": "credit",
-                "cardholderName": "Po & Sons Pty Ltd",
-            },
-            "merchant": {
-                "merchantId": "4638116",
-                "merchantName": "MEGS BEAUTY AND NAILS",
-                "settlementBsb": "133-605",
-                "settlementAccountNumber": "172174",
-                "surchargeBsb": "133-606",
-                "surchargeAccountNumber": "172131",
-            },
-            "transactionDateTime": "12 Jun 2015 18:22 AEST",
-            "user": "BILLC786",
-            "settlementDate": "13 Jun 2015",
-            "isVoidable": True,
-            "isRefundable": False,
-        }
+        mock_post.return_value.json.return_value = load_json_file("tests/data/refund_transaction.json")
         transaction, errors = self.client.refund_transaction(
             transaction_id="1179985404",
             amount="100",
@@ -434,28 +235,9 @@ class TestClient(unittest.TestCase):
         self.assertEqual(transaction.status, "refunded")
 
     @patch("requests.get")
-    def test_get_customer(self, mock_get):
+    def test_get_customer(self, mock_get) -> NoReturn:
         mock_get.return_value.status_code = 200
-        mock_get.return_value.json.return_value = {
-            "customerNumber": "98",
-            "paymentSetup": {},
-            "contact": {
-                "customerName": "Rebecca Turing",
-                "emailAddress": "bect@example.net",
-                "sendEmailReceipts": True,
-                "phoneNumber": "04 9999 8888",
-                "address": {
-                    "street1": "12 Test St",
-                    "street2": None,
-                    "cityName": "Wombat",
-                    "state": "NSW",
-                    "postalCode": "2587",
-                },
-            },
-            "customFields": {"customField1": "Senior"},
-            "notes": {"notes": "Example notes"},
-            "virtualAccount": {},
-        }
+        mock_get.return_value.json.return_value = load_json_file("tests/data/customer.json")
         customer, customer_errors = self.client.get_customer("98")
         self.assertIsNotNone(customer)
         self.assertIsNone(customer_errors)
@@ -463,7 +245,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(customer.customer_name, "Rebecca Turing")
 
     @patch("requests.put")
-    def test_update_payment_setup_card(self, mock_post):
+    def test_update_payment_setup_card(self, mock_post) -> NoReturn:
         # update card or bank account in PayWay from token
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = {
@@ -471,7 +253,8 @@ class TestClient(unittest.TestCase):
             "paymentMethod": "creditCard",
         }
         ps, ps_errors = self.client.update_payment_setup(
-            token="4bcec36f-7b02-43db-b3ec-bfb65acfe272", customer_id="1"
+            token="4bcec36f-7b02-43db-b3ec-bfb65acfe272",
+            customer_id="1",
         )
         self.assertIsNone(ps_errors)
         self.assertIsNotNone(ps)

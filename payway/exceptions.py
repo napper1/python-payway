@@ -1,29 +1,22 @@
-class PaywayError(Exception):
-    _code = None
-    _message = None
+from __future__ import annotations
 
-    def __init__(self, code, message, *args, **kwargs):
+from typing import NoReturn
+
+
+class PaywayError(Exception):
+    _code: str = None
+    _message: str = None
+
+    def __init__(self, code: str, message: str, *args: dict, **kwargs: dict) -> NoReturn:
         """
         code            : str = PayWay API response/error code
         message         : str = appropriate message
         """
 
-        super(PaywayError, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self._code = code
-        self._message = "{}: {}".format(code, message).encode("utf-8")
+        self._message = f"{code}: {message}".encode()
 
-    def __bytes__(self):
-        return self._message
-
-    def __unicode__(self):
-        try:
-            return unicode(self.__bytes__())
-        except NameError:
-            return str(self.__bytes__(), "utf-8")
-
-    def __str__(self):
-        return self.__bytes__().decode("utf-8")
-
-    def __repr__(self):
-        return self.__unicode__()
+    def __str__(self) -> str:
+        return self.message

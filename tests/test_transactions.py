@@ -1,12 +1,16 @@
+from __future__ import annotations
+
 import unittest
+from typing import NoReturn
 from unittest.mock import patch
 
 from payway.client import Client
+from payway.test_utils import load_json_file
 
 
 class TestTransactionRequest(unittest.TestCase):
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> NoReturn:
         merchant_id = "TEST"
         bank_account_id = "0000000A"
         publishable_api_key = "TPUBLISHABLE-API-KEY"
@@ -20,28 +24,9 @@ class TestTransactionRequest(unittest.TestCase):
         )
 
     @patch("requests.Session.get")
-    def test_search_transactions(self, mock_get):
+    def test_search_transactions(self, mock_get) -> NoReturn:
         mock_get.return_value.status_code = 200
-        mock_get.return_value.json.return_value = {
-            "data": [
-                {
-                    "transactionId": 1179985404,
-                    "receiptNumber": "1179985404",
-                    "status": "approved",
-                    "responseCode": "11",
-                    "responseText": "Approved VIP",
-                    "transactionType": "payment",
-                    "customerNumber": "1",
-                    "customerName": "Po & Sons Pty Ltd",
-                    "customerEmail": "henry@example.net",
-                    "currency": "aud",
-                    "principalAmount": 100.00,
-                    "surchargeAmount": 1.00,
-                    "paymentAmount": 101.00,
-                    "paymentMethod": "creditCard",
-                }
-            ]
-        }
+        mock_get.return_value.json.return_value = load_json_file("tests/data/transactions.json")
         query = "/search-customer?customerNumber=1"
         response = self.client.search_transactions(query)
         transactions = response["data"]

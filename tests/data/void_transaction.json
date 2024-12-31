@@ -1,0 +1,34 @@
+{
+    "transactionId": 1179985404,
+    "receiptNumber": "1179985404",
+    "status": "voided",
+    "customerNumber": "1",
+    "customerName": "Po & Sons Pty Ltd",
+    "customerEmail": "henry@example.net",
+    "currency": "aud",
+    "principalAmount": 100.00,
+    "surchargeAmount": 1.00,
+    "paymentAmount": 101.00,
+    "paymentMethod": "creditCard",
+    "creditCard": {
+        "cardNumber": "456471...004",
+        "expiryDateMonth": "02",
+        "expiryDateYear": "19",
+        "cardScheme": "visa",
+        "cardType": "credit",
+        "cardholderName": "Po & Sons Pty Ltd"
+    },
+    "merchant": {
+        "merchantId": "4638116",
+        "merchantName": "MEGS BEAUTY AND NAILS",
+        "settlementBsb": "133-605",
+        "settlementAccountNumber": "172174",
+        "surchargeBsb": "133-606",
+        "surchargeAccountNumber": "172131"
+    },
+    "transactionDateTime": "12 Jun 2015 18:22 AEST",
+    "user": "BILLC786",
+    "settlementDate": "13 Jun 2015",
+    "isVoidable": true,
+    "isRefundable": false
+}
