@@ -163,7 +163,7 @@ class TestClient(unittest.TestCase):
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = load_json_file("tests/data/transaction.json")
         payment = copy.deepcopy(self.payment)
-        payment.customer_number =  "1"
+        payment.customer_number = "1"
         payment.token = "2bcec36f-7b02-43db-b3ec-bfb65acfe272"
         payment.order_number = "5200"
         payment.merchant_id = self.client.merchant_id

@@ -1,0 +1,34 @@
+repos:
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.6.6
+    hooks:
+      # Run linter
+      - id: ruff
+        language: system
+        types_or: [ python, pyi, ]
+        args: [--fix, --exit-non-zero-on-fix, --select, I]
+      # Run formatter
+      - id: ruff-format
+        language: system
+        types_or: [ python, pyi, ]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: "(^static/|/static/|^fobi/|.md$|.django.po$|.csv$)"
+      - id: end-of-file-fixer
+        exclude: "(^static/|/static/|^fobi/)"
+      - id: debug-statements
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+        exclude: "^(static/|theme/|fixtures/static/|core/static/|fobi/)"
+
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.7.9
+    hooks:
+      - id: bandit
+        args: ['-iii', '-ll', "-c", "pyproject.toml"]
+        additional_dependencies: ["bandit[toml]"]

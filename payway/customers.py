@@ -78,7 +78,9 @@ class CustomerRequest:
         )
 
     @json_list("update_contact_details")
-    def update_contact_details(self, customer_number: int, customer: PayWayCustomer | None = None, **options: dict) -> requests.Response:
+    def update_contact_details(
+        self, customer_number: int, customer: PayWayCustomer | None = None, **options: dict
+    ) -> requests.Response:
         """
         param: customer_number: PayWay customer number
         param: customer PayWayCustomer object
