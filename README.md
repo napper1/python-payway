@@ -215,7 +215,7 @@ Please follow PayWay's advice about reducing your risk of fraudulent transaction
 uv python install 3.8.19
 uv venv
 source .venv/bin/activate
-uv sync
+uv sync --extra dev
 ```
 
 ## Testing

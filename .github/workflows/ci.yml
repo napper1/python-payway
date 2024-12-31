@@ -1,4 +1,4 @@
-name: Django CI/CD Workflow
+name: CI Workflow
 
 on:
   release:
@@ -22,7 +22,7 @@ jobs:
       - name: Set up Python 3.8
         run: uv python install 3.8.19
       - name: Install the project
-        run: uv sync
+        run: uv sync --extra dev
       - name: Run pre-commit
         run: uv run pre-commit run --all-files --config .pre-commit-config.ci.yaml
       - name: Run tests
