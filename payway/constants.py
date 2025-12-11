@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+PAYWAY_API_URL = "https://api.payway.com.au/rest/v1"
+TOKEN_URL = PAYWAY_API_URL + "/single-use-tokens-redirect"
+TRANSACTION_URL = PAYWAY_API_URL + "/transactions"
+CUSTOMER_URL = PAYWAY_API_URL + "/customers"
+OWN_BANK_ACCOUNTS_URL = PAYWAY_API_URL + "/your-bank-accounts"
+TOKEN_NO_REDIRECT = PAYWAY_API_URL + "/single-use-tokens"
 TRANSACTION_APPROVED = "0"
 
 SUMMARY_CODES = {
@@ -69,7 +75,8 @@ EFT_RESPONSE_CODES = {
 CVN_RESPONSE_CODES = {
     "M": "Matched",  # i.e. the CVN is correct
     "N": "Not Matched",  # i.e. the CVN is incorrect
-    "P": "Not Processed",  # i.e. the CVN was not processed for some reason; do not assume that the CVN is necessarily correct
+    "P": "Not Processed",
+    # i.e. the CVN was not processed for some reason; do not assume that the CVN is necessarily correct
     "S": "Suspicious",
     "U": "Unknown",  # i.e. the CVN was not processed for some reason; do not assume that the CVN is necessarily correct
 }
@@ -132,3 +139,17 @@ DIRECT_DEBIT_CHOICES = (
 )
 PAYMENT_METHOD_CHOICES = OTHER_PAYMENT_CHOICES + DIRECT_DEBIT_CHOICES
 VALID_PAYMENT_METHOD_CHOICES = ["card", "direct_debit"]
+PAYWAY_ERROR_RESPONSE_CODES = [
+    400,
+    401,
+    403,
+    405,
+    406,
+    407,
+    409,
+    410,
+    415,
+    429,
+    501,
+    503,
+]

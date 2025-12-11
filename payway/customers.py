@@ -4,7 +4,7 @@ from typing import Any
 
 import requests
 
-from payway.conf import CUSTOMER_URL
+from payway.constants import CUSTOMER_URL
 from payway.model import PayWayCustomer
 from payway.utils import json_list
 

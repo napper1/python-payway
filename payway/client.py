@@ -6,10 +6,13 @@ from typing import Any
 
 import requests
 
-from payway.conf import CUSTOMER_URL, TOKEN_NO_REDIRECT, TRANSACTION_URL
 from payway.constants import (
     BANK_ACCOUNT_PAYMENT_CHOICE,
     CREDIT_CARD_PAYMENT_CHOICE,
+    CUSTOMER_URL,
+    PAYWAY_ERROR_RESPONSE_CODES,
+    TOKEN_NO_REDIRECT,
+    TRANSACTION_URL,
     VALID_PAYMENT_METHOD_CHOICES,
 )
 from payway.customers import CustomerRequest
@@ -48,10 +51,10 @@ class Client(CustomerRequest, TransactionRequest):
         publishable_api_key: str,
     ) -> None:
         """
-        :param merchant_id        : str                 = PayWay Merchant ID
-        :param bank_account_id   : str                  = PayWay Bank Account ID
-        :param secret_api_key   : str                   = PayWay Secret APi Key
-        :param publishable_api_key   : str              = PayWay Publishable API Key
+        :param merchant_id: PayWay Merchant ID
+        :param bank_account_id: PayWay Bank Account ID
+        :param secret_api_key: PayWay Secret APi Key
+        :param publishable_api_key: PayWay Publishable API Key
         """
         self._validate_credentials(
             merchant_id,
@@ -63,7 +66,6 @@ class Client(CustomerRequest, TransactionRequest):
         self.bank_account_id = bank_account_id
         self.secret_api_key = secret_api_key
         self.publishable_api_key = publishable_api_key
-
         session = requests.Session()
         session.auth = (self.secret_api_key, "")
         session.headers = {"content-type": "application/x-www-form-urlencoded"}
@@ -79,16 +81,14 @@ class Client(CustomerRequest, TransactionRequest):
         secret_api_key: str,
         publishable_api_key: str,
     ) -> None:
-        if not merchant_id or not bank_account_id or not secret_api_key or not publishable_api_key:
-            if not secret_api_key or not publishable_api_key:
-                logger.error("PayWay API keys not found")
-                raise PaywayError(
-                    message="PayWay API keys not found",
-                    code="INVALID_API_KEYS",
-                )
-            logger.error(
-                "Merchant ID, bank account ID, secret API key, publishable API key are " "invalid",
+        if any(not key for key in (secret_api_key, publishable_api_key)):
+            logger.error("PayWay API keys not found")
+            raise PaywayError(
+                message="PayWay API keys not found",
+                code="INVALID_API_KEYS",
             )
+        if any(not val for val in (merchant_id, bank_account_id)):
+            logger.error("Merchant ID or bank account ID invalid")
             raise PaywayError(
                 message="Invalid credentials",
                 code="INVALID_API_CREDENTIALS",
@@ -145,10 +145,9 @@ class Client(CustomerRequest, TransactionRequest):
                 "paymentMethod": payway_payment_method,
             },
         )
-        endpoint = TOKEN_NO_REDIRECT
         logger.info("Sending Create Token request to PayWay.")
         response = self.post_request(
-            endpoint,
+            TOKEN_NO_REDIRECT,
             data,
             auth=(self.publishable_api_key, ""),
             idempotency_key=idempotency_key,
@@ -156,8 +155,7 @@ class Client(CustomerRequest, TransactionRequest):
         errors = self._validate_response(response)
         if errors:
             return None, errors
-        token_response = TokenResponse().from_dict(response.json())
-        return token_response, errors
+        return TokenResponse().from_dict(response.json()), errors
 
     def create_card_token(
         self, card: PayWayCard, idempotency_key: str | None = None
@@ -187,23 +185,18 @@ class Client(CustomerRequest, TransactionRequest):
     ) -> tuple[PayWayCustomer | None, list[PaymentError] | None]:
         """
         Create a customer in PayWay system
-
         POST /customers to have PayWay generate the customer number
         PUT /customers/{customerNumber} to use your own customer number
-
         :param customer:    PayWayCustomer object represents a customer in PayWay
         :param idempotency_key:   str: unique value to avoid duplicate POSTs
         See model.PayWayCustomer
-        :return:
         """
 
         data = customer.to_dict()
         data.update(
             {"merchantId": self.merchant_id, "bankAccountId": self.bank_account_id},
         )
-
         logger.info("Sending Create Customer request to PayWay.")
-
         if customer.custom_id:
             endpoint = f"{CUSTOMER_URL}/{customer.custom_id}"
             response = self.put_request(endpoint, data)
@@ -214,11 +207,9 @@ class Client(CustomerRequest, TransactionRequest):
                 data,
                 idempotency_key=idempotency_key,
             )
-
         errors = self._validate_response(response)
         if errors:
             return None, errors
-
         customer = PayWayCustomer().from_dict(response.json())
         return customer, errors
 
@@ -246,25 +237,11 @@ class Client(CustomerRequest, TransactionRequest):
         Validates all responses from PayWay to catch documented PayWay errors.
         :param response: requests response object
         """
-        if response.status_code in [
-            400,
-            401,
-            403,
-            405,
-            406,
-            407,
-            409,
-            410,
-            415,
-            429,
-            501,
-            503,
-        ]:
+        if response.status_code in PAYWAY_ERROR_RESPONSE_CODES:
             http_error_msg = f"{response.status_code} Client Error: {response.reason} for url: {response.url}"
             raise PaywayError(code=str(response.status_code), message=http_error_msg)
 
         if response.status_code in [404, 422]:  # Documented PayWay errors in JSON
-            # parse error message
             return PaymentError().from_dict(response.json())
 
         if response.status_code == 500:
@@ -308,8 +285,7 @@ class Client(CustomerRequest, TransactionRequest):
         errors = self._validate_response(response)
         if errors:
             return None, errors
-        transaction = PayWayTransaction.from_dict(response.json())
-        return transaction, errors
+        return PayWayTransaction.from_dict(response.json()), errors
 
     def refund_transaction(
         self,
@@ -340,8 +316,7 @@ class Client(CustomerRequest, TransactionRequest):
         errors = self._validate_response(response)
         if errors:
             return None, errors
-        transaction = PayWayTransaction.from_dict(response.json())
-        return transaction, errors
+        return PayWayTransaction.from_dict(response.json()), errors
 
     def get_customer(self, customer_id: str) -> tuple[PayWayCustomer | None, list[PaymentError] | None]:
         """
@@ -353,8 +328,7 @@ class Client(CustomerRequest, TransactionRequest):
         errors = self._validate_response(response)
         if errors:
             return None, errors
-        customer = PayWayCustomer.from_dict(response.json())
-        return customer, errors
+        return PayWayCustomer.from_dict(response.json()), errors
 
     def update_payment_setup(self, token: str, customer_id: str) -> tuple[PaymentSetup | None, list[PaymentError] | None]:
         """
@@ -372,5 +346,4 @@ class Client(CustomerRequest, TransactionRequest):
         errors = self._validate_response(response)
         if errors:
             return None, errors
-        ps = PaymentSetup.from_dict(response.json())
-        return ps, errors
+        return PaymentSetup.from_dict(response.json()), errors

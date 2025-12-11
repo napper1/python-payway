@@ -213,7 +213,7 @@ Please follow PayWay's advice about reducing your risk of fraudulent transaction
 
 ```bash
 uv python install 3.8.19
-uv venv
+uv venv --python 3.8.19
 source .venv/bin/activate
 uv sync --extra dev
 ```
@@ -221,5 +221,5 @@ uv sync --extra dev
 ## Testing
 
 ```bash
-python -m unittest discover tests
+uv run pytest tests/ -v
 ```

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import requests
 
-from payway.conf import TRANSACTION_URL
+from payway.constants import TRANSACTION_URL
 from payway.utils import json_list
 
 
