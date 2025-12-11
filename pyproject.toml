@@ -131,3 +131,11 @@ filterwarnings = [
 [tool.bandit]
 exclude_dirs = ["tests", "migrations"]
 tests = ["B201", "B301"]
+
+[dependency-groups]
+dev = [
+    "mypy>=0.971",
+    "pytest>=8.3.5",
+    "ruff>=0.6.6",
+    "ty>=0.0.1a33",
+]
