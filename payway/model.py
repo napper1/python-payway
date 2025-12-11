@@ -43,9 +43,7 @@ class PayWayCard:
 
     @staticmethod
     def from_dict(payway_card: dict[str, Any]) -> PayWayCard:
-        card_number = payway_card.get("maskedCardNumber") or payway_card.get(
-            "cardNumber"
-        )
+        card_number = payway_card.get("maskedCardNumber") or payway_card.get("cardNumber")
         return PayWayCard(
             card_number=card_number,
             cvn=payway_card.get("cvn"),
