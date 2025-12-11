@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "python-payway"
-version = "0.0.5"
+version = "0.0.7"
 description = "Python client for working with Westpac's PayWay REST API"
 authors = [
     { name = "Ben Napper", email = "reppan197@gmail.com" }
@@ -22,11 +22,16 @@ dependencies = [
     "requests>=2.20.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/napper1/python-payway"
+Repository = "https://github.com/napper1/python-payway"
+Issues = "https://github.com/napper1/python-payway/issues"
+
 [project.optional-dependencies]
 dev = [
-  "pre-commit>=3.5.0",
-  "ruff==0.6.6",
-  "mypy>=0.971",
+    "pre-commit>=3.5.0",
+    "ruff==0.6.6",
+    "mypy>=0.971",
 ]
 
 [tool.mypy]
@@ -48,53 +53,53 @@ target-version = "py38"
 
 [tool.ruff.lint]
 select = [
-  "F",
-  "E",
-  "W",
-  "C90",
-  "I",
-  "N",
-  "UP",
-  "YTT",
-  "ANN",
-  "ASYNC",
-  "S",
-  "BLE",
-  "FBT",
-  "B",
-  "A",
-  "COM",
-  "C4",
-  "DTZ",
-  "T10",
-  "DJ",
-  "EM",
-  "EXE",
-  "FA",
-  'ISC',
-  "ICN",
-  "G",
-  'INP',
-  'PIE',
-  "T20",
-  'PYI',
-  'PT',
-  "Q",
-  "RSE",
-  "RET",
-  "SLF",
-  "SLOT",
-  "SIM",
-  "TID",
-  "INT",
-  "ERA",
-  "PD",
-  "PGH",
-  "PL",
-  "TRY",
-  "FLY",
-  "PERF",
-  "RUF",
+    "F",
+    "E",
+    "W",
+    "C90",
+    "I",
+    "N",
+    "UP",
+    "YTT",
+    "ANN",
+    "ASYNC",
+    "S",
+    "BLE",
+    "FBT",
+    "B",
+    "A",
+    "COM",
+    "C4",
+    "DTZ",
+    "T10",
+    "DJ",
+    "EM",
+    "EXE",
+    "FA",
+    'ISC',
+    "ICN",
+    "G",
+    'INP',
+    'PIE',
+    "T20",
+    'PYI',
+    'PT',
+    "Q",
+    "RSE",
+    "RET",
+    "SLF",
+    "SLOT",
+    "SIM",
+    "TID",
+    "INT",
+    "ERA",
+    "PD",
+    "PGH",
+    "PL",
+    "TRY",
+    "FLY",
+    "PERF",
+    "RUF",
 ]
 ignore = ["ANN101", "COM812", "ISC001"]
 
@@ -127,9 +132,9 @@ log_format = "%(asctime)s %(levelname)s %(message)s"
 log_date_format = "%Y-%m-%d %H:%M:%S"
 addopts = "-v -ra -q"
 filterwarnings = [
-  "ignore:.*defines default_app_config.*",
-  "ignore:The providing_args argument is deprecated..*",
-  "ignore::DeprecationWarning",
+    "ignore:.*defines default_app_config.*",
+    "ignore:The providing_args argument is deprecated..*",
+    "ignore::DeprecationWarning",
 ]
 
 [tool.bandit]
