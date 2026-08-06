@@ -242,7 +242,7 @@ class Client(CustomerRequest, TransactionRequest):
             http_error_msg = f"{response.status_code} Client Error: {response.reason} for url: {response.url}"
             raise PaywayError(code=str(response.status_code), message=http_error_msg)
 
-        if response.status_code in [404, 422]:  # Documented PayWay errors in JSON
+        if response.status_code in [HTTPStatus.NOT_FOUND, HTTPStatus.UNPROCESSABLE_ENTITY]:  # Documented PayWay errors in JSON
             return PaymentError.from_dict(response.json())
 
         if response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR:
