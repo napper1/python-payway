@@ -15,6 +15,7 @@ from payway.constants import (
     TOKEN_NO_REDIRECT,
     TRANSACTION_URL,
     VALID_PAYMENT_METHOD_CHOICES,
+    PaymentMethod,
 )
 from payway.customers import CustomerRequest
 from payway.exceptions import PaywayError
@@ -122,30 +123,27 @@ class Client(CustomerRequest, TransactionRequest):
         )
 
     def create_token(
-        self, payway_obj: BankAccount | PayWayCard, payment_method: str, idempotency_key: str | None = None
+        self, payway_obj: BankAccount | PayWayCard, payment_method: PaymentMethod | str, idempotency_key: str | None = None
     ) -> tuple[TokenResponse | None, list[PaymentError] | None]:
         """
         Creates a single use token for a Customer's payment setup (credit card or bank account)
         :param payway_obj:   object: one of model.PayWayCard or model.BankAccount object
-        :param payment_method:   str: one of `card` or `direct_debit`
+        :param payment_method:   PaymentMethod or str: one of `card` or `direct_debit`
         :param idempotency_key:   str: unique value to avoid duplicate POSTs
         """
-        data = payway_obj.to_dict()
-        if payment_method == "card":
-            payway_payment_method = CREDIT_CARD_PAYMENT_CHOICE
-        elif payment_method == "direct_debit":
-            payway_payment_method = BANK_ACCOUNT_PAYMENT_CHOICE
-        else:
+        try:
+            payment_method = PaymentMethod(payment_method)
+        except ValueError as exc:
             valid_payment_method_choices = ", ".join(VALID_PAYMENT_METHOD_CHOICES)
             raise PaywayError(
                 message=f"Invalid payment method. Must be one of {valid_payment_method_choices}",
                 code="INVALID_PAYMENT_METHOD",
-            )
-        data.update(
-            {
-                "paymentMethod": payway_payment_method,
-            },
-        )
+            ) from exc
+        data = payway_obj.to_dict()
+        if payment_method is PaymentMethod.CARD:
+            data["paymentMethod"] = CREDIT_CARD_PAYMENT_CHOICE
+        else:
+            data["paymentMethod"] = BANK_ACCOUNT_PAYMENT_CHOICE
         logger.info("Sending Create Token request to PayWay.")
         response = self.post_request(
             TOKEN_NO_REDIRECT,
@@ -165,7 +163,7 @@ class Client(CustomerRequest, TransactionRequest):
         :param card:    PayWayCard object represents a customer's credit card details
         :param idempotency_key:   str: unique value to avoid duplicate POSTs
         """
-        return self.create_token(card, "card", idempotency_key=idempotency_key)
+        return self.create_token(card, PaymentMethod.CARD, idempotency_key=idempotency_key)
 
     def create_bank_account_token(
         self, bank_account: BankAccount, idempotency_key: str | None = None
@@ -177,7 +175,7 @@ class Client(CustomerRequest, TransactionRequest):
         """
         return self.create_token(
             bank_account,
-            "direct_debit",
+            PaymentMethod.DIRECT_DEBIT,
             idempotency_key=idempotency_key,
         )
 

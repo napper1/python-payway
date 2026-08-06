@@ -1,6 +1,13 @@
 from __future__ import annotations
 
+from enum import StrEnum
 from http import HTTPStatus
+
+
+class PaymentMethod(StrEnum):
+    CARD = "card"
+    DIRECT_DEBIT = "direct_debit"
+
 
 PAYWAY_API_URL = "https://api.payway.com.au/rest/v1"
 TOKEN_URL = PAYWAY_API_URL + "/single-use-tokens-redirect"
@@ -143,7 +150,7 @@ DIRECT_DEBIT_CHOICES = (
     ("remittanceProcessingService", "Remittance Processing Service"),
 )
 PAYMENT_METHOD_CHOICES = OTHER_PAYMENT_CHOICES + DIRECT_DEBIT_CHOICES
-VALID_PAYMENT_METHOD_CHOICES = ["card", "direct_debit"]
+VALID_PAYMENT_METHOD_CHOICES = [method.value for method in PaymentMethod]
 PAYWAY_ERROR_RESPONSE_CODES = [
     HTTPStatus.BAD_REQUEST,
     HTTPStatus.UNAUTHORIZED,
