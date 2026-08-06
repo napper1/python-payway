@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from http import HTTPStatus
 from logging import getLogger
 from typing import Any
 
@@ -155,7 +156,7 @@ class Client(CustomerRequest, TransactionRequest):
         errors = self._validate_response(response)
         if errors:
             return None, errors
-        return TokenResponse().from_dict(response.json()), errors
+        return TokenResponse.from_dict(response.json()), errors
 
     def create_card_token(
         self, card: PayWayCard, idempotency_key: str | None = None
@@ -210,7 +211,7 @@ class Client(CustomerRequest, TransactionRequest):
         errors = self._validate_response(response)
         if errors:
             return None, errors
-        customer = PayWayCustomer().from_dict(response.json())
+        customer = PayWayCustomer.from_dict(response.json())
         return customer, errors
 
     def process_payment(
@@ -242,18 +243,18 @@ class Client(CustomerRequest, TransactionRequest):
             raise PaywayError(code=str(response.status_code), message=http_error_msg)
 
         if response.status_code in [404, 422]:  # Documented PayWay errors in JSON
-            return PaymentError().from_dict(response.json())
+            return PaymentError.from_dict(response.json())
 
-        if response.status_code == 500:
+        if response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR:
             try:
                 errors = response.json()
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as exc:
                 raise PaywayError(
                     code=str(response.status_code),
                     message="Internal server error",
-                )
+                ) from exc
             # Documented PayWay server errors in JSON
-            payway_error = ServerError().from_dict(errors)
+            payway_error = ServerError.from_dict(errors)
             message = payway_error.to_message()
             raise PaywayError(code=str(response.status_code), message=message)
 

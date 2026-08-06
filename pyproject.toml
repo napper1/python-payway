@@ -101,7 +101,7 @@ select = [
     "PERF",
     "RUF",
 ]
-ignore = ["ANN101", "COM812", "ISC001"]
+ignore = ["ANN101", "ANN102", "COM812", "ISC001"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "I"]
