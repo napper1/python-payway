@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from http import HTTPStatus
-from typing import Callable
 
 from payway.exceptions import PaywayError
 

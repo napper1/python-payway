@@ -69,7 +69,7 @@ class Client(CustomerRequest, TransactionRequest):
         self.publishable_api_key = publishable_api_key
         session = requests.Session()
         session.auth = (self.secret_api_key, "")
-        session.headers = {"content-type": "application/x-www-form-urlencoded"}
+        session.headers["content-type"] = "application/x-www-form-urlencoded"
         self.session = session
         session_no_headers = requests.Session()
         session_no_headers.auth = session.auth

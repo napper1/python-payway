@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field, fields
-from typing import Any, ClassVar, TypeVar
+from typing import Any, ClassVar, Self
 
 from payway.utils import snake_to_camel
-
-_T = TypeVar("_T", bound="PayWayModel")
 
 
 class PayWayModel:
@@ -33,7 +31,7 @@ class PayWayModel:
         return result
 
     @classmethod
-    def from_dict(cls: type[_T], data: dict[str, Any]) -> _T:  # noqa: PYI019  # typing.Self needs Python 3.11
+    def from_dict(cls, data: dict[str, Any]) -> Self:
         kwargs = {}
         for f in fields(cls):
             value = data.get(f.metadata.get("alias", snake_to_camel(f.name)))
