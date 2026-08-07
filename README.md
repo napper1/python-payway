@@ -10,6 +10,8 @@
 
 ## Install
 
+Requires Python 3.11 or later.
+
 ```bash
 pip install python-payway
 ```
@@ -212,11 +214,10 @@ Please follow PayWay's advice about reducing your risk of fraudulent transaction
 ## Running the project
 
 ```bash
-uv python install 3.8.19
-uv venv --python 3.8.19
-source .venv/bin/activate
-uv sync --extra dev
+uv sync
 ```
+
+uv provisions a suitable Python (3.11+) and installs the dev dependencies automatically.
 
 ## Testing
 

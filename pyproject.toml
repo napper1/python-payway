@@ -11,7 +11,7 @@ authors = [
 ]
 license = { text = "MIT" }
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -35,7 +35,7 @@ dev = [
 ]
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.11"
 check_untyped_defs = true
 ignore_missing_imports = true
 allow_redefinition = false
@@ -49,7 +49,7 @@ warn_unused_configs = true
 [tool.ruff]
 fix = true
 line-length = 131
-target-version = "py38"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = [
@@ -101,7 +101,7 @@ select = [
     "PERF",
     "RUF",
 ]
-ignore = ["ANN101", "COM812", "ISC001"]
+ignore = ["ANN101", "ANN102", "COM812", "ISC001"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "I"]
@@ -123,7 +123,7 @@ typeCheckingMode = "strict"
 
 [tool.ty.environment]
 extra-paths = []
-python-version = "3.8"
+python-version = "3.11"
 
 [tool.pytest.ini_options]
 log_cli = true
@@ -144,6 +144,7 @@ tests = ["B201", "B301"]
 [dependency-groups]
 dev = [
     "mypy>=0.971",
+    "pre-commit>=3.5.0",
     "pytest>=8.3.5",
     "ruff>=0.6.6",
     "ty>=0.0.1a33",

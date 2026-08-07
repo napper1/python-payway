@@ -1,5 +1,14 @@
 from __future__ import annotations
 
+from enum import StrEnum
+from http import HTTPStatus
+
+
+class PaymentMethod(StrEnum):
+    CARD = "card"
+    DIRECT_DEBIT = "direct_debit"
+
+
 PAYWAY_API_URL = "https://api.payway.com.au/rest/v1"
 TOKEN_URL = PAYWAY_API_URL + "/single-use-tokens-redirect"
 TRANSACTION_URL = PAYWAY_API_URL + "/transactions"
@@ -65,7 +74,10 @@ EFT_RESPONSE_CODES = {
     "QS": "Transaction Successful",
     "QT": "Invalid currency",
     "QU": "Unknown Customer IP Address",
-    "QV": "Invalid Original Order Number specified for Refund, Refund amount exceeds capture amount, or Previous capture was not approved",
+    "QV": (
+        "Invalid Original Order Number specified for Refund, Refund amount exceeds capture amount, "
+        "or Previous capture was not approved"
+    ),
     "QW": "Invalid Reference Number",
     "QX": "Network Error has occurred",
     "QY": "Card Type Not Accepted",
@@ -138,18 +150,18 @@ DIRECT_DEBIT_CHOICES = (
     ("remittanceProcessingService", "Remittance Processing Service"),
 )
 PAYMENT_METHOD_CHOICES = OTHER_PAYMENT_CHOICES + DIRECT_DEBIT_CHOICES
-VALID_PAYMENT_METHOD_CHOICES = ["card", "direct_debit"]
+VALID_PAYMENT_METHOD_CHOICES = [method.value for method in PaymentMethod]
 PAYWAY_ERROR_RESPONSE_CODES = [
-    400,
-    401,
-    403,
-    405,
-    406,
-    407,
-    409,
-    410,
-    415,
-    429,
-    501,
-    503,
+    HTTPStatus.BAD_REQUEST,
+    HTTPStatus.UNAUTHORIZED,
+    HTTPStatus.FORBIDDEN,
+    HTTPStatus.METHOD_NOT_ALLOWED,
+    HTTPStatus.NOT_ACCEPTABLE,
+    HTTPStatus.PROXY_AUTHENTICATION_REQUIRED,
+    HTTPStatus.CONFLICT,
+    HTTPStatus.GONE,
+    HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
+    HTTPStatus.TOO_MANY_REQUESTS,
+    HTTPStatus.NOT_IMPLEMENTED,
+    HTTPStatus.SERVICE_UNAVAILABLE,
 ]
