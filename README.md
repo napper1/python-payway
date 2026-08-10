@@ -111,6 +111,36 @@ payment = PayWayPayment(customer_number=customer_number,
 transaction, errors = client.process_payment(payment)
 ```
 
+## Retries
+
+Retries are off by default. Opt in with `max_retries` (and optionally `retry_delay`, the base
+wait in seconds between attempts):
+
+```python
+client = Client(merchant_id='<your_payway_merchant_id>',
+                bank_account_id='<your_payway_bank_account_id>',
+                publishable_api_key='<your_payway_publishable_api_key>',
+                secret_api_key='<your_payway_secret_api_key>',
+                max_retries=2,
+                retry_delay=1.0)
+```
+
+This follows PayWay's retry guidance (<https://www.payway.com.au/docs/rest.html#network-errors>):
+
+- Requests are resent on connection errors, timeouts and HTTP 429/503 responses, waiting
+  `retry_delay` seconds between attempts (linear backoff, or the response's `Retry-After`
+  header when present). PayWay suggests a 20 second wait; keep `retry_delay` small for
+  synchronous checkout flows.
+- POSTs are only retried when an `idempotency_key` was supplied — the same
+  `Idempotency-Key` is resent so PayWay replays the original response instead of
+  processing a duplicate payment. POSTs without a key (and PUTs) are never retried.
+  GETs are always safe to retry.
+- Other errors (including HTTP 500/502/504) are never retried, per PayWay's advice.
+
+```python
+transaction, errors = client.process_payment(payment, idempotency_key=str(uuid.uuid4()))
+```
+
 ## Handling errors
 
 Documented errors (such as 422 Unprocessable entity) are parsed into an PaymentError class that you can use in an customer error message.

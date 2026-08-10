@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import copy
+import json
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
+
+import requests
 
 from payway.client import Client
+from payway.exceptions import PaywayError
 from payway.model import (
     BankAccount,
     PayWayCard,
@@ -257,3 +261,113 @@ class TestClient(unittest.TestCase):
         )
         self.assertIsNone(ps_errors)
         self.assertIsNotNone(ps)
+
+
+class TestClientRetries(unittest.TestCase):
+    def setUp(self) -> None:
+        self.client = Client(
+            merchant_id="TEST",
+            bank_account_id="0000000A",
+            publishable_api_key="TPUBLISHABLE-API-KEY",
+            secret_api_key="TPUBLISHABLE-SECRET",
+            max_retries=2,
+            retry_delay=0.1,
+        )
+        self.payment = PayWayPayment(
+            customer_number="1",
+            transaction_type="payment",
+            amount=10,
+            currency="aud",
+            order_number="5100",
+            ip_address="127.0.0.1",
+        )
+        self.transaction_json = load_json_file("tests/data/transaction.json")
+
+    @patch("payway.client.time.sleep")
+    @patch("requests.post")
+    def test_connection_error_then_success_resends_same_idempotency_key(self, mock_post, mock_sleep) -> None:
+        success = Mock(status_code=200)
+        success.json.return_value = self.transaction_json
+        mock_post.side_effect = [requests.ConnectionError("connection reset"), success]
+        transaction, errors = self.client.process_payment(self.payment, idempotency_key="key-123")
+        self.assertIsNone(errors)
+        self.assertEqual(transaction.status, "approved")
+        self.assertEqual(mock_post.call_count, 2)
+        keys = [call.kwargs["headers"]["Idempotency-Key"] for call in mock_post.call_args_list]
+        self.assertEqual(keys, ["key-123", "key-123"])
+
+    @patch("payway.client.time.sleep")
+    @patch("requests.post")
+    def test_429_waits_then_succeeds(self, mock_post, mock_sleep) -> None:
+        success = Mock(status_code=200)
+        success.json.return_value = self.transaction_json
+        mock_post.side_effect = [Mock(status_code=429, headers={}), success]
+        transaction, errors = self.client.process_payment(self.payment, idempotency_key="key-123")
+        self.assertIsNone(errors)
+        self.assertEqual(transaction.status, "approved")
+        self.assertEqual(mock_post.call_count, 2)
+        mock_sleep.assert_called_once_with(0.1)
+
+    @patch("payway.client.time.sleep")
+    @patch("requests.post")
+    def test_429_honours_retry_after_header(self, mock_post, mock_sleep) -> None:
+        success = Mock(status_code=200)
+        success.json.return_value = self.transaction_json
+        mock_post.side_effect = [Mock(status_code=429, headers={"Retry-After": "3"}), success]
+        transaction, errors = self.client.process_payment(self.payment, idempotency_key="key-123")
+        self.assertIsNone(errors)
+        mock_sleep.assert_called_once_with(3.0)
+
+    @patch("payway.client.time.sleep")
+    @patch("requests.post")
+    def test_503_exhausting_retries_raises_failure(self, mock_post, mock_sleep) -> None:
+        mock_post.side_effect = [Mock(status_code=503, headers={}) for _ in range(3)]
+        with self.assertRaises(PaywayError):
+            self.client.process_payment(self.payment, idempotency_key="key-123")
+        self.assertEqual(mock_post.call_count, 3)
+
+    @patch("payway.client.time.sleep")
+    @patch("requests.post")
+    def test_500_is_not_retried(self, mock_post, mock_sleep) -> None:
+        response = Mock(status_code=500)
+        response.json.side_effect = json.JSONDecodeError("invalid", "", 0)
+        mock_post.return_value = response
+        with self.assertRaises(PaywayError):
+            self.client.process_payment(self.payment, idempotency_key="key-123")
+        self.assertEqual(mock_post.call_count, 1)
+        mock_sleep.assert_not_called()
+
+    @patch("payway.client.time.sleep")
+    @patch("requests.post")
+    def test_post_without_idempotency_key_is_not_retried(self, mock_post, mock_sleep) -> None:
+        mock_post.side_effect = requests.ConnectionError("connection reset")
+        with self.assertRaises(requests.ConnectionError):
+            self.client.process_payment(self.payment)
+        self.assertEqual(mock_post.call_count, 1)
+        mock_sleep.assert_not_called()
+
+    @patch("payway.client.time.sleep")
+    @patch("requests.post")
+    def test_max_retries_zero_default_is_single_attempt(self, mock_post, mock_sleep) -> None:
+        client = Client(
+            merchant_id="TEST",
+            bank_account_id="0000000A",
+            publishable_api_key="TPUBLISHABLE-API-KEY",
+            secret_api_key="TPUBLISHABLE-SECRET",
+        )
+        mock_post.side_effect = requests.ConnectionError("connection reset")
+        with self.assertRaises(requests.ConnectionError):
+            client.process_payment(self.payment, idempotency_key="key-123")
+        self.assertEqual(mock_post.call_count, 1)
+        mock_sleep.assert_not_called()
+
+    @patch("payway.client.time.sleep")
+    @patch("requests.get")
+    def test_get_is_retried_on_connection_error(self, mock_get, mock_sleep) -> None:
+        success = Mock(status_code=200)
+        success.json.return_value = self.transaction_json
+        mock_get.side_effect = [requests.ConnectionError("connection reset"), success]
+        transaction, errors = self.client.get_transaction(1179985404)
+        self.assertIsNone(errors)
+        self.assertIsNotNone(transaction.transaction_id)
+        self.assertEqual(mock_get.call_count, 2)
