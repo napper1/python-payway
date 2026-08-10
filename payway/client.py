@@ -54,7 +54,6 @@ class Client(CustomerRequest, TransactionRequest):
         bank_account_id: str,
         secret_api_key: str,
         publishable_api_key: str,
-        *,
         max_retries: int = 0,
         retry_delay: float = 1.0,
     ) -> None:
@@ -129,7 +128,7 @@ class Client(CustomerRequest, TransactionRequest):
             can_retry=bool(idempotency_key),
         )
 
-    def _send_with_retries(self, send: Callable[[], requests.Response], *, can_retry: bool) -> requests.Response:
+    def _send_with_retries(self, send: Callable[[], requests.Response], can_retry: bool) -> requests.Response:  # noqa: FBT001
         """
         Resend on network errors and HTTP 429/503 per PayWay's retry guidance
         https://www.payway.com.au/docs/rest.html#network-errors
