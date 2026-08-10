@@ -19,14 +19,6 @@ from payway.model import (
 from payway.test_utils import load_json_file
 
 
-def mock_response(status_code: int, json_data: dict | None = None, headers: dict | None = None) -> Mock:
-    response = Mock()
-    response.status_code = status_code
-    response.headers = headers or {}
-    response.json.return_value = json_data or {}
-    return response
-
-
 class TestClient(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -294,10 +286,9 @@ class TestClientRetries(unittest.TestCase):
     @patch("payway.client.time.sleep")
     @patch("requests.post")
     def test_connection_error_then_success_resends_same_idempotency_key(self, mock_post, mock_sleep) -> None:
-        mock_post.side_effect = [
-            requests.ConnectionError("connection reset"),
-            mock_response(200, self.transaction_json),
-        ]
+        success = Mock(status_code=200)
+        success.json.return_value = self.transaction_json
+        mock_post.side_effect = [requests.ConnectionError("connection reset"), success]
         transaction, errors = self.client.process_payment(self.payment, idempotency_key="key-123")
         self.assertIsNone(errors)
         self.assertEqual(transaction.status, "approved")
@@ -308,10 +299,9 @@ class TestClientRetries(unittest.TestCase):
     @patch("payway.client.time.sleep")
     @patch("requests.post")
     def test_429_waits_then_succeeds(self, mock_post, mock_sleep) -> None:
-        mock_post.side_effect = [
-            mock_response(429),
-            mock_response(200, self.transaction_json),
-        ]
+        success = Mock(status_code=200)
+        success.json.return_value = self.transaction_json
+        mock_post.side_effect = [Mock(status_code=429, headers={}), success]
         transaction, errors = self.client.process_payment(self.payment, idempotency_key="key-123")
         self.assertIsNone(errors)
         self.assertEqual(transaction.status, "approved")
@@ -321,10 +311,9 @@ class TestClientRetries(unittest.TestCase):
     @patch("payway.client.time.sleep")
     @patch("requests.post")
     def test_429_honours_retry_after_header(self, mock_post, mock_sleep) -> None:
-        mock_post.side_effect = [
-            mock_response(429, headers={"Retry-After": "3"}),
-            mock_response(200, self.transaction_json),
-        ]
+        success = Mock(status_code=200)
+        success.json.return_value = self.transaction_json
+        mock_post.side_effect = [Mock(status_code=429, headers={"Retry-After": "3"}), success]
         transaction, errors = self.client.process_payment(self.payment, idempotency_key="key-123")
         self.assertIsNone(errors)
         mock_sleep.assert_called_once_with(3.0)
@@ -332,7 +321,7 @@ class TestClientRetries(unittest.TestCase):
     @patch("payway.client.time.sleep")
     @patch("requests.post")
     def test_503_exhausting_retries_raises_failure(self, mock_post, mock_sleep) -> None:
-        mock_post.side_effect = [mock_response(503), mock_response(503), mock_response(503)]
+        mock_post.side_effect = [Mock(status_code=503, headers={}) for _ in range(3)]
         with self.assertRaises(PaywayError):
             self.client.process_payment(self.payment, idempotency_key="key-123")
         self.assertEqual(mock_post.call_count, 3)
@@ -340,10 +329,9 @@ class TestClientRetries(unittest.TestCase):
     @patch("payway.client.time.sleep")
     @patch("requests.post")
     def test_500_is_not_retried(self, mock_post, mock_sleep) -> None:
-        response = mock_response(500)
+        response = Mock(status_code=500)
         response.json.side_effect = json.JSONDecodeError("invalid", "", 0)
         mock_post.return_value = response
-        mock_post.side_effect = None
         with self.assertRaises(PaywayError):
             self.client.process_payment(self.payment, idempotency_key="key-123")
         self.assertEqual(mock_post.call_count, 1)
@@ -376,10 +364,9 @@ class TestClientRetries(unittest.TestCase):
     @patch("payway.client.time.sleep")
     @patch("requests.get")
     def test_get_is_retried_on_connection_error(self, mock_get, mock_sleep) -> None:
-        mock_get.side_effect = [
-            requests.ConnectionError("connection reset"),
-            mock_response(200, self.transaction_json),
-        ]
+        success = Mock(status_code=200)
+        success.json.return_value = self.transaction_json
+        mock_get.side_effect = [requests.ConnectionError("connection reset"), success]
         transaction, errors = self.client.get_transaction(1179985404)
         self.assertIsNone(errors)
         self.assertIsNotNone(transaction.transaction_id)
