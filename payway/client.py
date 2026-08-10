@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import time
+from collections.abc import Callable
 from http import HTTPStatus
 from logging import getLogger
 from typing import Any
@@ -12,6 +14,7 @@ from payway.constants import (
     CREDIT_CARD_PAYMENT_CHOICE,
     CUSTOMER_URL,
     PAYWAY_ERROR_RESPONSE_CODES,
+    RETRYABLE_STATUS_CODES,
     TOKEN_NO_REDIRECT,
     TRANSACTION_URL,
     VALID_PAYMENT_METHOD_CHOICES,
@@ -45,18 +48,23 @@ class Client(CustomerRequest, TransactionRequest):
     secret_api_key = ""
     publishable_api_key = ""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         merchant_id: str,
         bank_account_id: str,
         secret_api_key: str,
         publishable_api_key: str,
+        *,
+        max_retries: int = 0,
+        retry_delay: float = 1.0,
     ) -> None:
         """
         :param merchant_id: PayWay Merchant ID
         :param bank_account_id: PayWay Bank Account ID
         :param secret_api_key: PayWay Secret APi Key
         :param publishable_api_key: PayWay Publishable API Key
+        :param max_retries: retries per request on network errors and HTTP 429/503 (0 disables)
+        :param retry_delay: base seconds to wait between attempts (Retry-After header wins if present)
         """
         self._validate_credentials(
             merchant_id,
@@ -68,6 +76,8 @@ class Client(CustomerRequest, TransactionRequest):
         self.bank_account_id = bank_account_id
         self.secret_api_key = secret_api_key
         self.publishable_api_key = publishable_api_key
+        self.max_retries = max_retries
+        self.retry_delay = retry_delay
         session = requests.Session()
         session.auth = (self.secret_api_key, "")
         session.headers["content-type"] = "application/x-www-form-urlencoded"
@@ -97,7 +107,10 @@ class Client(CustomerRequest, TransactionRequest):
             )
 
     def get_request(self, endpoint: str) -> requests.Response:
-        return requests.get(url=endpoint, auth=(self.secret_api_key, ""), timeout=30)
+        return self._send_with_retries(
+            lambda: requests.get(url=endpoint, auth=(self.secret_api_key, ""), timeout=30),
+            can_retry=True,
+        )
 
     def post_request(
         self, endpoint: str, data: dict[str, Any], auth: tuple[str, str] | None = None, idempotency_key: str | None = None
@@ -111,9 +124,41 @@ class Client(CustomerRequest, TransactionRequest):
         headers = {"content-type": "application/x-www-form-urlencoded"}
         if idempotency_key:
             headers["Idempotency-Key"] = idempotency_key
-        return requests.post(url=endpoint, auth=auth, data=data, headers=headers, timeout=30)
+        return self._send_with_retries(
+            lambda: requests.post(url=endpoint, auth=auth, data=data, headers=headers, timeout=30),
+            can_retry=bool(idempotency_key),
+        )
+
+    def _send_with_retries(self, send: Callable[[], requests.Response], *, can_retry: bool) -> requests.Response:
+        """
+        Resend on network errors and HTTP 429/503 per PayWay's retry guidance
+        https://www.payway.com.au/docs/rest.html#network-errors
+        Requests without an Idempotency-Key must pass can_retry=False: retrying
+        them could double-charge. Other statuses (including 500/502/504) are
+        returned as-is.
+        """
+        retries = self.max_retries if can_retry else 0
+        for attempt in range(retries):
+            try:
+                response = send()
+            except (requests.ConnectionError, requests.Timeout) as exc:
+                logger.warning("PayWay request failed (%s), retrying", exc)
+                time.sleep(self._retry_wait(attempt, None))
+                continue
+            if response.status_code not in RETRYABLE_STATUS_CODES:
+                return response
+            logger.warning("PayWay responded %s, retrying", response.status_code)
+            time.sleep(self._retry_wait(attempt, response))
+        return send()
+
+    def _retry_wait(self, attempt: int, response: requests.Response | None) -> float:
+        retry_after = response.headers.get("Retry-After") if response is not None else None
+        if retry_after and retry_after.isdigit():
+            return float(retry_after)
+        return self.retry_delay * (attempt + 1)
 
     def put_request(self, endpoint: str, data: dict[str, Any]) -> requests.Response:
+        # No Idempotency-Key is sent on PUTs, so they are never retried
         return requests.put(
             url=endpoint,
             auth=(self.secret_api_key, ""),
