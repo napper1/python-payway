@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.0.9
 
 - Add `search_transactions_by_customer()`, `search_transactions_by_receipt()` and
   `search_transactions_by_order()`, matching PayWay's three documented search paths.
