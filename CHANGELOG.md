@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Add `search_transactions_by_customer()`, `search_transactions_by_receipt()` and
+  `search_transactions_by_order()`, matching PayWay's three documented search paths.
+  Parameters are passed as query params and an optional `page` supports pagination.
+- **Breaking:** remove `search_transactions(query)`. It built `GET /transactions<query>`, and
+  `/transactions` only accepts POST, so any query that wasn't a `/search-*` path failed with
+  405 Method Not Allowed. Use the three methods above instead.
+
 ## 0.0.8
 
 - Add opt-in transport retries to `Client` via `max_retries` and `retry_delay`
