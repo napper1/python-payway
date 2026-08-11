@@ -211,6 +211,20 @@ class TestCustomerRequest(unittest.TestCase):
         mock_get.return_value.status_code = 200
         mock_get.return_value.json.return_value = load_json_file("tests/data/customers.json")
         response = self.client.list_customers()
+        mock_get.assert_called_once_with(
+            "https://api.payway.com.au/rest/v1/customers",
+            params={"page": None},
+        )
         self.assertEqual(response.__class__, dict)
         self.assertIsNotNone(response)
         self.assertIsNotNone(response.get("data"))
+
+    @patch("requests.Session.get")
+    def test_list_customers_with_page(self, mock_get) -> None:
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.json.return_value = load_json_file("tests/data/customers.json")
+        self.client.list_customers(page=3)
+        mock_get.assert_called_once_with(
+            "https://api.payway.com.au/rest/v1/customers",
+            params={"page": 3},
+        )

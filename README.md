@@ -197,6 +197,8 @@ Pass `page` to fetch a later page, using the number from the `next`/`prev` links
 response = client.search_transactions_by_customer(customer_number, page=2)
 ```
 
+`list_customers()` takes the same `page` argument.
+
 ## Process and capture a pre-authorisation
 
 To process a credit card pre-authorisation using a credit card stored against a customer use `preAuth` as the `transaction_type` along with the customer's PayWay number, amount and currency.

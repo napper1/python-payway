@@ -15,7 +15,7 @@ from payway.constants import (
     CUSTOMER_URL,
     PAYWAY_ERROR_RESPONSE_CODES,
     RETRYABLE_STATUS_CODES,
-    TOKEN_NO_REDIRECT,
+    TOKEN_URL,
     TRANSACTION_URL,
     VALID_PAYMENT_METHOD_CHOICES,
     PaymentMethod,
@@ -190,7 +190,7 @@ class Client(CustomerRequest, TransactionRequest):
             data["paymentMethod"] = BANK_ACCOUNT_PAYMENT_CHOICE
         logger.info("Sending Create Token request to PayWay.")
         response = self.post_request(
-            TOKEN_NO_REDIRECT,
+            TOKEN_URL,
             data,
             auth=(self.publishable_api_key, ""),
             idempotency_key=idempotency_key,
