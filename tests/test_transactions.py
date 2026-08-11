@@ -23,10 +23,44 @@ class TestTransactionRequest(unittest.TestCase):
         )
 
     @patch("requests.Session.get")
-    def test_search_transactions(self, mock_get) -> None:
+    def test_search_transactions_by_customer(self, mock_get) -> None:
         mock_get.return_value.status_code = 200
         mock_get.return_value.json.return_value = load_json_file("tests/data/transactions.json")
-        query = "/search-customer?customerNumber=1"
-        response = self.client.search_transactions(query)
-        transactions = response["data"]
-        self.assertIsNotNone(transactions)
+        response = self.client.search_transactions_by_customer(1)
+        mock_get.assert_called_once_with(
+            "https://api.payway.com.au/rest/v1/transactions/search-customer",
+            params={"customerNumber": 1, "page": None},
+        )
+        self.assertIsNotNone(response["data"])
+
+    @patch("requests.Session.get")
+    def test_search_transactions_by_customer_with_page(self, mock_get) -> None:
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.json.return_value = load_json_file("tests/data/transactions.json")
+        self.client.search_transactions_by_customer(1, page=2)
+        mock_get.assert_called_once_with(
+            "https://api.payway.com.au/rest/v1/transactions/search-customer",
+            params={"customerNumber": 1, "page": 2},
+        )
+
+    @patch("requests.Session.get")
+    def test_search_transactions_by_receipt(self, mock_get) -> None:
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.json.return_value = load_json_file("tests/data/transactions.json")
+        response = self.client.search_transactions_by_receipt("1234567")
+        mock_get.assert_called_once_with(
+            "https://api.payway.com.au/rest/v1/transactions/search-receipt",
+            params={"receiptNumber": "1234567", "page": None},
+        )
+        self.assertIsNotNone(response["data"])
+
+    @patch("requests.Session.get")
+    def test_search_transactions_by_order(self, mock_get) -> None:
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.json.return_value = load_json_file("tests/data/transactions.json")
+        response = self.client.search_transactions_by_order("ORDER-1")
+        mock_get.assert_called_once_with(
+            "https://api.payway.com.au/rest/v1/transactions/search-order",
+            params={"orderNumber": "ORDER-1", "page": None},
+        )
+        self.assertIsNotNone(response["data"])

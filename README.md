@@ -178,6 +178,27 @@ Poll a transaction using the `get_transaction` method.
 transaction, errors = client.get_transaction(transaction.transaction_id)
 ```
 
+## Search transactions
+
+PayWay has no plain `GET /transactions` resource, only three search paths. Each returns a
+paginated list (20 per page, most recent first) with `next`/`prev` links.
+
+```python
+response = client.search_transactions_by_customer(customer_number)
+response = client.search_transactions_by_receipt(receipt_number)
+response = client.search_transactions_by_order(order_number)
+
+transactions = response["data"]
+```
+
+Pass `page` to fetch a later page, using the number from the `next`/`prev` links:
+
+```python
+response = client.search_transactions_by_customer(customer_number, page=2)
+```
+
+`list_customers()` takes the same `page` argument.
+
 ## Process and capture a pre-authorisation
 
 To process a credit card pre-authorisation using a credit card stored against a customer use `preAuth` as the `transaction_type` along with the customer's PayWay number, amount and currency.
