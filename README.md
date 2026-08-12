@@ -258,6 +258,21 @@ PayWay API documentation <https://www.payway.com.au/docs/rest.html>
 It is recommended to use PayWay's Trusted Frame <https://www.payway.com.au/docs/rest.html#trusted-frame>
 when creating a single use token of a card or bank account so your PCI-compliance scope is reduced.  
 
+## Keeping the raw response
+
+Models parsed from a PayWay response keep that response verbatim on `raw`:
+
+```python
+transaction, errors = client.process_payment(payment)
+transaction.raw  # exactly what PayWay returned
+```
+
+Parsing is lossy — keys PayWay sends that the dataclass does not declare are dropped,
+absent keys become `None`, and a few are renamed (`maskedCardNumber` is parsed into
+`card_number`). Store `raw` rather than `to_dict()` if you are persisting responses for
+auditing, reconciliation or dispute resolution. Models you construct yourself, such as a
+`PayWayPayment` you are about to send, leave `raw` as `None`.
+
 ## Fraud
 
 Please follow PayWay's advice about reducing your risk of fraudulent transactions. <https://www.payway.com.au/docs/card-testing.html#card-testing>
