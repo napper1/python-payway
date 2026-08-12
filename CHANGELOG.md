@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.0.10
+
+- Models parsed from a PayWay response now keep that response verbatim on `raw`.
+  Parsing is lossy — keys PayWay sends but the dataclass does not declare are dropped
+  (a real transaction loses `creditCard.cardScheme` and `creditCard.cardType`), absent
+  keys come back as explicit `None`, and aliases rename them (`maskedCardNumber` is
+  stored as `cardNumber`) — so `to_dict()` is a projection, not the payload. Callers
+  persisting responses for auditing, reconciliation or dispute resolution should store
+  `transaction.raw`. Models you construct yourself leave it `None`, and `raw` is not a
+  dataclass field, so `to_dict()`, equality and `repr` are unchanged.
+
 ## 0.0.9
 
 - Add `search_transactions_by_customer()`, `search_transactions_by_receipt()` and

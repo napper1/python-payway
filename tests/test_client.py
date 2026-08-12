@@ -180,6 +180,29 @@ class TestClient(unittest.TestCase):
         self.assertEqual(transaction.response_code, "11")
 
     @patch("requests.post")
+    def test_process_payment_keeps_the_raw_response(self, mock_post) -> None:
+        """
+        Parsing drops keys PayWay sent, so ``raw`` keeps the body verbatim for
+        callers that persist responses for auditing or dispute resolution.
+        """
+        response = load_json_file("tests/data/transaction.json")
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.json.return_value = response
+        payment = copy.deepcopy(self.payment)
+        payment.customer_number = "1"
+        payment.token = "2bcec36f-7b02-43db-b3ec-bfb65acfe272"
+        payment.order_number = "5200"
+        payment.merchant_id = self.client.merchant_id
+
+        transaction, _ = self.client.process_payment(payment)
+
+        self.assertEqual(transaction.raw, response)
+        # cardScheme and cardType are not modelled, so only raw still has them.
+        self.assertEqual(transaction.raw["creditCard"]["cardScheme"], "visa")
+        self.assertNotIn("cardScheme", transaction.to_dict()["creditCard"])
+        self.assertEqual(transaction.card.raw, response["creditCard"])
+
+    @patch("requests.post")
     def test_process_payment_with_idempotency_key(self, mock_post) -> None:
         """
         Send a payment using a unique idempotency key to try and avoid duplicate POSTs

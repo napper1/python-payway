@@ -15,9 +15,16 @@ class PayWayModel:
         alias:      PayWay key when it is not the camelCase of the field name
         exclude:    omit the field from to_dict output
         from_dict:  callable applied to a non-None raw value when parsing
+
+    Instances built by from_dict keep the response body they were parsed from
+    on ``raw``, unchanged. Parsing is lossy - undeclared PayWay keys are dropped,
+    absent ones become None, and aliases rename them - so callers persisting a
+    response for auditing or dispute resolution should store ``raw``, not
+    ``to_dict()``. Models you build yourself leave it None.
     """
 
     __dataclass_fields__: ClassVar[dict[str, Any]]
+    raw: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         result = {}
@@ -39,7 +46,9 @@ class PayWayModel:
             if converter is not None and value is not None:
                 value = converter(value)
             kwargs[f.name] = value
-        return cls(**kwargs)
+        instance = cls(**kwargs)
+        instance.raw = data
+        return instance
 
 
 @dataclass
@@ -65,8 +74,10 @@ class PayWayCard(PayWayModel):
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> PayWayCard:
-        data = {**data, "cardNumber": data.get("maskedCardNumber") or data.get("cardNumber")}
-        return super().from_dict(data)
+        card = super().from_dict({**data, "cardNumber": data.get("maskedCardNumber") or data.get("cardNumber")})
+        # Keep PayWay's own body, not the copy rewritten for the alias above.
+        card.raw = data
+        return card
 
 
 @dataclass
