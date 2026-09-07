@@ -285,6 +285,68 @@ class TestClient(unittest.TestCase):
         self.assertIsNone(ps_errors)
         self.assertIsNotNone(ps)
 
+    @patch("requests.get")
+    def test_get_latest_api_key(self, mock_get) -> None:
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.json.return_value = {
+            "keyName": "T10000_SEC...1A4",
+            "key": "T10000_SEC_RANDOM_RANDOM_RANDOM_1A4",
+        }
+
+        api_key, errors = self.client.get_latest_api_key()
+
+        self.assertIsNone(errors)
+        self.assertEqual(api_key.key_name, "T10000_SEC...1A4")
+        self.assertEqual(api_key.key, "T10000_SEC_RANDOM_RANDOM_RANDOM_1A4")
+        self.assertEqual(mock_get.call_args.kwargs["url"], "https://api.payway.com.au/rest/v1/api-keys/latest")
+        self.assertEqual(mock_get.call_args.kwargs["auth"], ("TPUBLISHABLE-SECRET", ""))
+
+    @patch("requests.get")
+    def test_get_latest_api_key_returns_the_replacement_key(self, mock_get) -> None:
+        """
+        PayWay generates the next secret key 40 days before the current one expires and
+        returns it here in place of the key that authenticated the request.
+        """
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.json.return_value = {
+            "keyName": "T10000_SEC...9B2",
+            "key": "T10000_SEC_NEXT_NEXT_NEXT_9B2",
+        }
+
+        api_key, errors = self.client.get_latest_api_key()
+
+        self.assertIsNone(errors)
+        self.assertNotEqual(api_key.key, self.client.secret_api_key)
+        self.assertEqual(api_key.key, "T10000_SEC_NEXT_NEXT_NEXT_9B2")
+
+    @patch("requests.get")
+    def test_get_latest_api_key_returns_payway_errors(self, mock_get) -> None:
+        mock_get.return_value.status_code = 422
+        mock_get.return_value.json.return_value = {
+            "data": [{"fieldName": "apiKey", "message": "Invalid API key.", "fieldValue": ""}]
+        }
+
+        api_key, errors = self.client.get_latest_api_key()
+
+        self.assertIsNone(api_key)
+        self.assertEqual(len(errors), 1)
+        self.assertEqual(errors[0].message, "Invalid API key.")
+
+    @patch("requests.get")
+    def test_get_latest_api_key_raises_when_the_current_key_is_rejected(self, mock_get) -> None:
+        """
+        Renewal chains off the live key, so an expired one cannot fetch its replacement -
+        recovering needs an administrator to create a key in the PayWay website.
+        """
+        mock_get.return_value.status_code = 401
+        mock_get.return_value.reason = "Unauthorized"
+        mock_get.return_value.url = "https://api.payway.com.au/rest/v1/api-keys/latest"
+
+        with self.assertRaises(PaywayError) as context:
+            self.client.get_latest_api_key()
+
+        self.assertIn("401", str(context.exception))
+
 
 class TestClientRetries(unittest.TestCase):
     def setUp(self) -> None:

@@ -10,6 +10,7 @@ from typing import Any
 import requests
 
 from payway.constants import (
+    API_KEY_URL,
     BANK_ACCOUNT_PAYMENT_CHOICE,
     CREDIT_CARD_PAYMENT_CHOICE,
     CUSTOMER_URL,
@@ -26,6 +27,7 @@ from payway.model import (
     BankAccount,
     PaymentError,
     PaymentSetup,
+    PayWayApiKey,
     PayWayCard,
     PayWayCustomer,
     PayWayPayment,
@@ -360,6 +362,21 @@ class Client(CustomerRequest, TransactionRequest):
         if errors:
             return None, errors
         return PayWayTransaction.from_dict(response.json()), errors
+
+    def get_latest_api_key(self) -> tuple[PayWayApiKey | None, list[PaymentError] | None]:
+        """
+        Return the secret API key to use from now on, authenticated with the current one.
+        Usually this is the key already in use. PayWay generates the replacement 40 days
+        before the current key expires, and returns that instead once it exists, so callers
+        polling daily and persisting the result renew without an administrator minting a key
+        in the PayWay website.
+        https://www.payway.com.au/docs/rest.html#automate-secret-api-key-renewal
+        """
+        response = self.get_request(f"{API_KEY_URL}/latest")
+        errors = self._validate_response(response)
+        if errors:
+            return None, errors
+        return PayWayApiKey.from_dict(response.json()), errors
 
     def get_customer(self, customer_id: str) -> tuple[PayWayCustomer | None, list[PaymentError] | None]:
         """

@@ -251,6 +251,27 @@ Update a customer's payment setup with a new credit card or bank account in PayW
 payment_setup, errors = client.update_payment_setup(new_token, payway_customer.customer_number)
 ```
 
+## Renewing the secret API key
+
+Secret API keys expire one year after they are created. PayWay generates the replacement
+40 days before that, so an application that asks for the latest key once a day and stores
+what it gets back rolls onto the new key without an administrator creating one in the
+PayWay website.
+
+```python
+api_key, errors = client.get_latest_api_key()
+if api_key and api_key.key != stored_secret_api_key:
+    # Persist api_key.key. Log api_key.key_name - it is masked; the key itself is a password.
+    save_secret_api_key(api_key.key)
+```
+
+Usually the key returned is the one that authenticated the call. Renewal chains off the
+live key, so if the stored key is left to expire the call fails with a `PaywayError` and
+recovery means minting a key by hand — poll daily and alert on repeated failures.
+
+To test your renewal code, create two secret API keys in the PayWay website, configure the
+first, and confirm the application switches to the second on its own.
+
 ## Additional notes
 
 PayWay API documentation <https://www.payway.com.au/docs/rest.html>
