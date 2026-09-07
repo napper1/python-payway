@@ -295,3 +295,14 @@ class TokenResponse(PayWayModel):
     payment_method: str | None = None
     card: PayWayCard | None = field(default=None, metadata={"alias": "creditCard", "from_dict": PayWayCard.from_dict})
     bank_account: dict[str, Any] | None = None
+
+
+@dataclass
+class PayWayApiKey(PayWayModel):
+    """
+    key_name: str: masked form of the key, safe to log
+    key: str: the secret API key itself - treat it like a password
+    """
+
+    key_name: str | None = None
+    key: str | None = None

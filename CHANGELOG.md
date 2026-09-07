@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.11
+
+- Add `get_latest_api_key()` for PayWay's secret API key renewal endpoint
+  (`GET /api-keys/latest`). PayWay generates the next secret key 40 days before the
+  current one expires and returns it here, so callers polling daily and persisting the
+  result renew without an administrator creating a key in the PayWay website. Returns a
+  `PayWayApiKey` with `key_name` (masked, safe to log) and `key` (the secret itself).
+
 ## 0.0.10
 
 - Models parsed from a PayWay response now keep that response verbatim on `raw`.

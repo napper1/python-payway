@@ -13,6 +13,7 @@ PAYWAY_API_URL = "https://api.payway.com.au/rest/v1"
 TOKEN_URL = PAYWAY_API_URL + "/single-use-tokens"
 TRANSACTION_URL = PAYWAY_API_URL + "/transactions"
 CUSTOMER_URL = PAYWAY_API_URL + "/customers"
+API_KEY_URL = PAYWAY_API_URL + "/api-keys"
 TRANSACTION_APPROVED = "0"
 
 SUMMARY_CODES = {
